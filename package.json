@@ -1,8 +1,25 @@
 {
+  "name": "user-service",
+  "version": "1.0.0",
+  "description": "appsalary",
+  "main": "server.js",
+    "scripts": {
+      "start": "node src/server.js",
+      "dev": "nodemon src/server.js"
+    },
+  "keywords": [
+    "nodejs",
+    "express",
+    "microservices",
+    "user-service",
+    "maxit"
+  ],
   "dependencies": {
     "cros": "^1.1.0",
     "express": "^5.1.0",
+    "module-alias": "^2.2.3",
     "mongoose": "^8.15.1",
+    "node-cron": "^4.1.0",
     "nodemon": "^3.1.10"
   }
 }
