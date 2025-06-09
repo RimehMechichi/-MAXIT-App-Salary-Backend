@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "appsalary",
   "main": "server.js",
-    "scripts": {
-      "start": "node src/server.js",
-      "dev": "nodemon src/server.js"
-    },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
   "keywords": [
     "nodejs",
     "express",
@@ -20,6 +20,7 @@
     "module-alias": "^2.2.3",
     "mongoose": "^8.15.1",
     "node-cron": "^4.1.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "uuid": "^11.1.0"
   }
 }

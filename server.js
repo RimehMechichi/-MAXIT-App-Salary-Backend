@@ -1,12 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const congeRoutes = require('./Features/Conge/routes/congeRoutes.js');
+const annuaireRoutes = require('./Features/Annuaires/routes/annuairesRoutes.js');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use('/api', congeRoutes);
+app.use('/api', annuaireRoutes);
+
 
 // MongoDB Connection
 mongoose
