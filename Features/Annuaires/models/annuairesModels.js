@@ -1,12 +1,12 @@
   const mongoose = require('mongoose');
   const { v4: uuidv4 } = require('uuid');
 
-const annuairesSchema = new mongoose.Schema({
-  rapportId: {
-    type: String,
-    default: () => 'ORG-' + uuidv4(),
-    unique: true
-  },
+    const annuairesSchema = new mongoose.Schema({
+    rapportId: {
+        type: String,
+        default: () => 'ORG-' + uuidv4(),
+        unique: true
+    },
     name: { type: String, required: true },
     role: { type: String, required: true },
     email: { type: String , required: true },
