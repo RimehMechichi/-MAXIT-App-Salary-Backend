@@ -8,7 +8,7 @@ next(err); // Transmettre l'erreur au middleware suivant
 
 export function errorHandler(err, req, res, next) {
 // Renvoyer a l'utilisateur le code et le message de l'erreur
-res.status(err.status | | 500). json({
+res.status(err.status || 500). json({
 message: err.message,
 });
 }
