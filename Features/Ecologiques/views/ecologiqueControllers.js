@@ -3,10 +3,24 @@ const service = require('../viewModels/ecologiqueServices.js');
 
 exports.create = async (req, res) => {
   try {
-    const ecologiques = await service.createecologiques(req.body);
-    res.status(201).json(ecologiques);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { titre_eventEco, description_eventEco, date_eventEco } = req.body;
+    const imagePath = req.file ? req.file.path : null;
+
+    if (!titre_eventEco || !description_eventEco || !date_eventEco || !imagePath) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const newEvent = new createecologiques({
+      titre_eventEco,
+      description_eventEco,
+      date_eventEco,
+      image_eventEco: imagePath,
+    });
+
+    await newEvent.save();
+    res.status(201).json(newEvent);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

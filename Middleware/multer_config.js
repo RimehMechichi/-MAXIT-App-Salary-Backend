@@ -1,6 +1,7 @@
-import multer, { diskStorage } from "multer";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+const multer = require("multer");
+const { join, dirname } = require("path");
+const { fileURLToPath } = require("url");
+const diskStorage = multer.diskStorage;
 
 // Extensions autorisées
 const MIME_TYPES = {
@@ -14,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Configuration de multer
-const storage = diskStorage({
+const storage = diskStorage({ 
   destination: (req, file, callback) => {
     callback(null, join(__dirname, "../Public/images"));
   },
@@ -26,7 +27,7 @@ const storage = diskStorage({
 });
 
 // Export du middleware multer
-export default multer({
+module.exports = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // max 10 Mo
-}).single("image"); // Le champ du formulaire s'appelle "image"
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single("image");
