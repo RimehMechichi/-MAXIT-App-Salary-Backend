@@ -319,6 +319,33 @@ class UserController {
             res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des utilisateurs.' });
         }
     }
+
+    static async getOrganigramme(req, res) {
+        try {
+            const users = await User.find({}, 'firstName lastName jobTitle departement roles') // ne retourne que les champs utiles
+            .populate('roles', 'name') // si tu veux inclure le rôle (admin/user)
+            .exec();
+
+            // Optionnel : grouper par département
+            const organigramme = {};
+
+            users.forEach(user => {
+            if (!organigramme[user.departement]) {
+                organigramme[user.departement] = [];
+            }
+            organigramme[user.departement].push({
+                name: user.firstName + ' ' + user.lastName,
+                jobTitle: user.jobTitle,
+                role: user.roles.map(r => r.name),
+            });
+            });
+
+            res.status(200).json(organigramme);
+        } catch (error) {
+            console.error("Organigramme fetch error:", error);
+            res.status(500).json({ message: 'Erreur serveur lors de la récupération de l\'organigramme' });
+        }
+    }
 }
 
 module.exports = UserController;
