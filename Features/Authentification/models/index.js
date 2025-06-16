@@ -1,13 +1,12 @@
 const mongoose = require('mongoose');
-const User = require('../models/userModels.js');
-const Role = require('../models/role.model.js');
-
 mongoose.Promise = global.Promise;
 
 const db = {};
+
 db.mongoose = mongoose;
-db.user = User;
-db.role = Role;
+db.user = require('../models/userModels.js'); // ce fichier
+db.role = require('./role.model.js'); // ton fichier de rôle
+
 db.ROLES = ['user', 'admin'];
 
 module.exports = db;
