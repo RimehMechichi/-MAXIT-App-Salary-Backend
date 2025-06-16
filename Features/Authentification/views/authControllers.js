@@ -1,16 +1,14 @@
 const config = require( '../config/auth.config.js');
-const db = require ("../models/index.js");
 const nodemailer = require ('nodemailer');
 const jwt = require ("jsonwebtoken");
 const bcrypt = require ("bcryptjs");
 const { signUpEmailOptions, forgotPasswordEmailOptions } = require ('../config/emailOptions.config.js');
 const emailConfig = require ('../config/email.config.js');
-//const User = require('../models/userModels.js');
-
+const db = require('../models/index.js');
 
 const User = db.user;
 const Role = db.role;
-
+/*
 exports.signup = async (req, res) => {
   const {
     lastName,
@@ -50,15 +48,15 @@ exports.signup = async (req, res) => {
       statusCompte: 'actif',
     });
 
-    await newUser.save();
+    //await newUser.save();
 
     //const roles = await Role.find({ name: { $in: req.body.roles } }).exec();
-/** 
+
     if (!roles) {
      return res.status(500).json({ message: 'Error finding roles' });
     }
 
-    User.roles = roles.map(role => role._id);*/
+    User.roles = roles.map(role => role._id);
     await newUser.save();
     
     // Envoi mail à l'admin
@@ -87,6 +85,53 @@ exports.signup = async (req, res) => {
   }
 };
 
+*/
+exports.signup = async (req, res) => {
+  const {
+    lastName,
+    firstName,
+    email,
+    phone,
+    picture,
+    departement,
+    password,
+    jobTitle,
+  } = req.body;
+    console.log("✅ Type de User.findOne:", typeof User.findOne); 
+
+  try {
+    const existingUser = await User.findOne({ email });
+    console.log("🕵️‍♀️ Existing user trouvé ?", existingUser); // Ajoute cette ligne
+
+    if (existingUser) {
+      return res.status(409).json({ message: 'User already exists' });
+    }
+
+
+    const hashedPassword = bcrypt.hashSync(password, 8);
+
+    const newUser = new User({
+      lastName,
+      firstName,
+      email,
+      phone,
+      picture,
+      departement,
+      password: hashedPassword,
+      jobTitle,
+      statusUser: 'Confirmé',
+      statusCompte: 'actif',
+    });
+
+    await newUser.save(); // ✅ un seul save ici
+
+    return res.status(201).json({ message: 'User registered successfully.' });
+
+  } catch (error) {
+    console.error('Signup error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 
 

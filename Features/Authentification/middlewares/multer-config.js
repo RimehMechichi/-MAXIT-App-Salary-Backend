@@ -1,33 +1,29 @@
-const multer = require("multer");
-const { join, dirname } = require("path");
-const { fileURLToPath } = require("url");
-const diskStorage = multer.diskStorage;
+const multer = require('multer');
+const { join } = require('path');
 
-// Extensions autorisées
 const MIME_TYPES = {
-  "image/jpg": "jpg",
-  "image/jpeg": "jpg",
-  "image/png": "png",
+  'image/jpg': 'jpg',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
 };
 
-// Chemin absolu vers le dossier courant
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Configuration de multer
-const storage = diskStorage({ 
-  destination: (req, file, callback) => {
-    callback(null, join(__dirname, "../Public/images"));
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, join(__dirname, '../Public/images')); 
   },
-  filename: (req, file, callback) => {
-    const name = file.originalname.split(" ").join("_");
-    const extension = MIME_TYPES[file.mimetype];
-    callback(null, name + "_" + Date.now() + "." + extension);
+  filename: (req, file, cb) => {
+    const name = file.originalname.split(' ').join('_');
+    const extension = MIME_TYPES[file.mimetype] || 'jpg';
+    cb(null, name + '_' + Date.now() + '.' + extension);
   },
 });
 
-// Export du middleware multer
-module.exports = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-}).single("image");
+// Middleware multer pour un seul fichier avec champ 'image'
+const uploadSingleImage = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // max 10MB
+}).single('picture');
+
+module.exports = {
+  uploadSingleImage,
+};
