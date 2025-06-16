@@ -15,4 +15,8 @@ router.put('/unblock/:id', [authJwt.verifyToken, authJwt.isAdmin], UserControlle
 router.delete('/delete/:id', [authJwt.verifyToken, authJwt.isAdmin], UserController.deleteUser);
 router.get('/user/:id', [authJwt.verifyToken], UserController.getUserById);
 
+//organigramme
+router.get('/organigramme', [authJwt.verifyToken], UserController.getOrganigramme);
+
+
 module.exports = router;
