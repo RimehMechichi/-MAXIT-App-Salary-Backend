@@ -1,20 +1,33 @@
-import config from '../config/auth.config.js'
-import db from "../models/index.js";
-import nodemailer from 'nodemailer';
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import { signUpEmailOptions, forgotPasswordEmailOptions } from '../config/emailOptions.config.js';
-import emailConfig from '../config/email.config.js';
+const config = require( '../config/auth.config.js');
+const db = require ("../models/index.js");
+const nodemailer = require ('nodemailer');
+const jwt = require ("jsonwebtoken");
+const bcrypt = require ("bcryptjs");
+const { signUpEmailOptions, forgotPasswordEmailOptions } = require ('../config/emailOptions.config.js');
+const emailConfig = require ('../config/email.config.js');
+//const User = require('../models/userModels.js');
 
 
 const User = db.user;
 const Role = db.role;
 
-export async function signup(req, res) {
-  const { name, firstName, username, email, password, modePaiement, rib } = req.body;
-  const adminEmail = "belhadjo1999@gmail.com"
+exports.signup = async (req, res) => {
+  const {
+    lastName,
+    firstName,
+    email,
+    phone,
+    picture,
+    departement,
+    password,
+    jobTitle,
+  } = req.body;
+
+  const adminEmail = "rimehmechichi08@gmail.com";
+
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.find({ email });
+
     if (existingUser) {
       if (existingUser.statusCompte === 'bloqué') {
         return res.status(409).json({ message: 'Account is blocked. Contact administrator for assistance.' });
@@ -22,56 +35,62 @@ export async function signup(req, res) {
       return res.status(409).json({ message: 'User already exists' });
     }
 
-    const user = new User({
-      name,
+    const hashedPassword = bcrypt.hashSync(password, 8);
+
+    const newUser = new User({
+      lastName,
       firstName,
-      username,
       email,
-      password: bcrypt.hashSync(password, 8),
-      modePaiement,
-      rib
+      phone,
+      picture,
+      departement,
+      password: hashedPassword,
+      jobTitle,
+      statusUser: 'nonConfirmé',
+      statusCompte: 'actif',
     });
-    user.statusUser = 'nonConfirmé';
-    user.statusCompte = 'actif';
 
-    await user.save();
+    await newUser.save();
 
-    const roles = await Role.find({ name: { $in: req.body.roles } }).exec();
-
+    //const roles = await Role.find({ name: { $in: req.body.roles } }).exec();
+/** 
     if (!roles) {
-      return res.status(500).json({ message: 'Error finding roles' });
+     return res.status(500).json({ message: 'Error finding roles' });
     }
 
-    user.roles = roles.map(role => role._id);
-    await user.save();
-
+    User.roles = roles.map(role => role._id);*/
+    await newUser.save();
+    
+    // Envoi mail à l'admin
     const transporter = nodemailer.createTransport(emailConfig);
-
     const mailOptions = {
       from: signUpEmailOptions.from,
       to: adminEmail,
       subject: signUpEmailOptions.subject,
-      html: signUpEmailOptions.html.replace('{{username}}', username).replace('{{email}}', email),
+      html: signUpEmailOptions.html
+        .replace('{{username}}', firstName + ' ' + lastName)
+        .replace('{{email}}', email),
     };
 
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log(error);
-        return res.status(500).json({ message: 'Error sending email' });
-      }
+    try {
+      const info = await transporter.sendMail(mailOptions);
       console.log('Email sent: ' + info.response);
-    });
-    res.json({ message: 'User registration successful. Confirmation email sent.' });
+      return res.status(201).json({ message: 'User registered. Confirmation email sent.' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      return res.status(500).json({ message: 'User saved but email failed to send.' });
+    }
 
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Error registering user' });
+    console.error('Signup error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
 
-export async function signin(req, res) {
+
+
+exports.signin  = async (req, res) => {
   try {
     const user = await User.findOne({ username: req.body.username })
       .populate('roles', '-__v');
@@ -96,7 +115,7 @@ export async function signin(req, res) {
 
     const token = jwt.sign({ id: user.id }, config.secret, { expiresIn: 86400 });
 
-    const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
+    //const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
 
     req.session.token = token;
 
@@ -117,7 +136,7 @@ export async function signin(req, res) {
 
 
 
-export async function signout(req, res) {
+exports.signout = async  (req, res) => {
   try {
     req.session = null;
     return res.status(200).send({ message: "You've been signed out!" });
@@ -126,7 +145,7 @@ export async function signout(req, res) {
   }
 };
 
-export async function forgotPassword(req, res) {
+exports.forgotPassword = async  (req, res) => {
   try {
     const { email } = req.body;
 
@@ -160,7 +179,7 @@ export async function forgotPassword(req, res) {
   }
 };
 
-export async function resetPassword(req, res) {
+exports.resetPassword = async  (req, res) => {
   try {
     const { resetToken, newPassword } = req.body;
     const user = await User.findOne({
@@ -184,7 +203,7 @@ export async function resetPassword(req, res) {
   }
 };
 
-export function generateResetToken() {
+exports.generateResetToken = function () {
   const resetToken = jwt.sign({ data: 'resetToken' }, 'projetPI-secret-key', { expiresIn: '1h' });
   return resetToken;
 }
