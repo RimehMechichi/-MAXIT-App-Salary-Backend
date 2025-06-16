@@ -1,4 +1,5 @@
 {
+  "type": "commonjs",
   "name": "user-service",
   "version": "1.0.0",
   "description": "appsalary",
@@ -10,20 +11,29 @@
   "keywords": [
     "nodejs",
     "express",
-    "microservices",
-    "user-service",
+    "mvvm",
+    "appsalary",
     "maxit"
   ],
   "dependencies": {
+    "axios": "^1.9.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "cros": "^1.1.0",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "module-alias": "^2.2.3",
     "mongoose": "^8.15.1",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "node-cron": "^4.1.0",
+    "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
-    "uuid": "^11.1.0"
+    "telesignsdk": "^3.0.4",
+    "uuid": "^11.1.0",
+    "socket.io": "^4.7.5",
+    "socket.io-stream": "^0.9.1"
   }
 }
