@@ -1,4 +1,4 @@
-const User = require('../models/userModels.js');
+const User = require('../models/user.model.js');
 const Role = require('../models/role.model.js');
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth.config.js');

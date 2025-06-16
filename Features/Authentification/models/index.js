@@ -1,13 +1,11 @@
 const mongoose = require('mongoose');
-const User = require('../models/userModels.js');
-const Role = require('../models/role.model.js');
-
 mongoose.Promise = global.Promise;
 
 const db = {};
+
 db.mongoose = mongoose;
-db.user = User;
-db.role = Role;
+db.user = require('./user.model.js'); // ✅ ce chemin doit être correct
+db.role = require('./role.model.js');
 db.ROLES = ['user', 'admin'];
 
 module.exports = db;
