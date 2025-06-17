@@ -44,13 +44,12 @@ exports.signup = async (req, res) => {
       departement,
       password: hashedPassword,
       jobTitle,
-      statusUser: 'nonConfirmé',
+      statusUser: 'Confirmé',
       statusCompte: 'actif',
     });
 
-    //await newUser.save();
 
-    //const roles = await Role.find({ name: { $in: req.body.roles } }).exec();
+    const roles = await Role.find({ name: { $in: req.body.roles } }).exec();
 
     if (!roles) {
      return res.status(500).json({ message: 'Error finding roles' });
@@ -84,8 +83,8 @@ exports.signup = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 */
+
 exports.signup = async (req, res) => {
   const {
     lastName,
@@ -101,7 +100,7 @@ exports.signup = async (req, res) => {
 
   try {
     const existingUser = await User.findOne({ email });
-    console.log("🕵️‍♀️ Existing user trouvé ?", existingUser); // Ajoute cette ligne
+    console.log("🕵️‍♀️ Existing user trouvé ?", existingUser);
 
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
@@ -123,7 +122,7 @@ exports.signup = async (req, res) => {
       statusCompte: 'actif',
     });
 
-    await newUser.save(); // ✅ un seul save ici
+    await newUser.save();
 
     return res.status(201).json({ message: 'User registered successfully.' });
 
@@ -143,10 +142,10 @@ exports.signin  = async (req, res) => {
     if (!user) {
       return res.status(404).send({ message: 'User not found' });
     }
-
+/*
     if (user.statusUser === 'nonConfirmé') {
       return res.status(401).send({ message: 'Account not confirmed yet' });
-    }
+    }*/
 
     if (user.statusCompte === 'bloqué') {
       return res.status(401).send({ message: 'Account is blocked' });
@@ -160,7 +159,7 @@ exports.signin  = async (req, res) => {
 
     const token = jwt.sign({ id: user.id }, config.secret, { expiresIn: 86400 });
 
-    //const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
+    const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
 
     req.session.token = token;
 
