@@ -17,8 +17,6 @@ class UserController {
         } catch (error) {
             res.status(500).json({ message: "An error occurred while retrieving users." });
         }
-
-
     }
 
     static async getUserById(req, res) {
