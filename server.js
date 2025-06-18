@@ -13,7 +13,7 @@ const ecologiqueRoutes  = require ('./Features/Ecologiques/routes/ecologiquesRou
 const authRoutes  = require ('./Features/Authentification/routes/authRoutes.js');
 const userRoutes  = require ('./Features/Authentification/routes/userRoutes.js');
 const ideaBoxRoutes  = require ('./Features/BoxDidees/routes/ideaBoxRoutes.js');
-
+const partenariatRoutes  = require ('./Features/Partenariats/routes/partenariatRoutes.js');
 
 
 require('dotenv').config();
@@ -39,6 +39,7 @@ app.use('/', ecologiqueRoutes);
 app.use('/api', authRoutes);
 app.use('/', userRoutes);
 app.use('/', ideaBoxRoutes);
+app.use('/', partenariatRoutes);
 
 
 // MongoDB Connection
