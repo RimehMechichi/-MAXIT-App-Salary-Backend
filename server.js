@@ -2,6 +2,9 @@ const express = require ('express');
 const mongoose = require ('mongoose');
 const morgan = require ('morgan');
 const cors = require ('cors');
+const http = require ('http'); 
+const { Server } = require ('socket.io'); 
+
 const { notFoundError, errorHandler } = require ('./Middleware/error_handler.js');
 const congeRoutes = require ('./Features/Conge/routes/congeRoutes.js');
 const annuaireRoutes  = require ('./Features/Annuaires/routes/annuairesRoutes.js');
@@ -9,8 +12,8 @@ const conventionRoutes  = require ('./Features/Conventions/routes/conventionRout
 const ecologiqueRoutes  = require ('./Features/Ecologiques/routes/ecologiquesRoutes.js');
 const authRoutes  = require ('./Features/Authentification/routes/authRoutes.js');
 const userRoutes  = require ('./Features/Authentification/routes/userRoutes.js');
-const http = require ('http'); // Ajout de cette ligne
-const { Server } = require ('socket.io'); // Ajout de cette ligne
+const ideaBoxRoutes  = require ('./Features/BoxDidees/routes/ideaBoxRoutes.js');
+
 
 
 require('dotenv').config();
@@ -35,6 +38,7 @@ app.use('/', conventionRoutes);
 app.use('/', ecologiqueRoutes);
 app.use('/api', authRoutes);
 app.use('/', userRoutes);
+app.use('/', ideaBoxRoutes);
 
 
 // MongoDB Connection
