@@ -11,18 +11,18 @@ async function getAllConges() {
 }
 
 // Read One
-async function getCongeById(idConge) {
+async function getCongeById(_id) {
   return await Conge.findOne({ idConge });
 }
 
 // Update
-async function updateConge(idConge, data) {
-  return await Conge.findOneAndUpdate({ idConge }, data, { new: true });
+async function updateConge(_id, data) {
+  return await Conge.findOneAndUpdate({ _id }, data, { new: true });
 }
 
 // Delete
-async function deleteConge(idConge) {
-  return await Conge.findOneAndDelete({ idConge });
+async function deleteConge(_id) {
+  return await Conge.findOneAndDelete({ _id });
 }
 
 module.exports = {

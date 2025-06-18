@@ -11,18 +11,18 @@ async function getAllideaBoxs() {
 }
 
 // Read One
-async function getideaBoxById(idideaBox) {
-  return await ideaBox.findOne({ idideaBox });
+async function getideaBoxById(_id) {
+  return await ideaBox.findOne({ _id });
 }
 /*
 // Update
-async function updateideaBox(idideaBox, data) {
-  return await ideaBox.findOneAndUpdate({ idideaBox }, data, { new: true });
+async function updateideaBox(_id, data) {
+  return await ideaBox.findOneAndUpdate({ _id }, data, { new: true });
 }
 
 // Delete
-async function deleteideaBox(idideaBox) {
-  return await ideaBox.findOneAndDelete({ idideaBox });
+async function deleteideaBox(_id) {
+  return await ideaBox.findOneAndDelete({ _id });
 }
 */
 module.exports = {
