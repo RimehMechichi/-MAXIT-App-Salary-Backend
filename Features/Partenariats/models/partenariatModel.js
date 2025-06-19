@@ -1,11 +1,11 @@
 const mongoose = require ('mongoose');
 
 const PartenariatSchema = new mongoose.Schema({
-companyName: {type : String, require: true},
-partEmail: {type : String, require: true},
-partPhone: {type : String, require: true},
-partDepartement: {type : String, require: true},
-activityDomain: {type : String, require: true},
+companyName: {type : String, required: true},
+partEmail: {type : String, required: true},
+partPhone: {type : String, required: true},
+partDepartement: {type : String, required: true},
+activityDomain: {type : String, required: true},
 addDate: {type : Date, default: Date.now },
 });
 
