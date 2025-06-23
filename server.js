@@ -15,6 +15,7 @@ const userRoutes  = require ('./Features/Authentification/routes/userRoutes.js')
 const ideaBoxRoutes  = require ('./Features/BoxDidees/routes/ideaBoxRoutes.js');
 const partenariatRoutes  = require ('./Features/Partenariats/routes/partenariatRoutes.js');
 const eventCalendarRoutes  = require ('./Features/Event_Clalendar/routes/eventCalendarRoutes.js');
+const reviewRoutes  = require ('./Features/Reviews/routes/reviewRoutes.js');
 
 
 require('dotenv').config();
@@ -42,6 +43,7 @@ app.use('/', userRoutes);
 app.use('/', ideaBoxRoutes);
 app.use('/', partenariatRoutes);
 app.use('/', eventCalendarRoutes);
+app.use('/', reviewRoutes);
 
 
 // MongoDB Connection
