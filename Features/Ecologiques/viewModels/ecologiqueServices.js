@@ -11,18 +11,18 @@ async function getAllecologiques() {
 }
 
 // Read One
-async function getecologiqueById(rapportId) {
-  return await ecologique.findOne({ rapportId });
+async function getecologiqueById(_id) {
+  return await ecologique.findOne({ _id });
 }
 
 // Update
-async function updateecologiques(rapportId, data) {
-  return await ecologique.findOneAndUpdate({ rapportId }, data, { new: true });
+async function updateecologiques(_id, data) {
+  return await ecologique.findOneAndUpdate({ _id }, data, { new: true });
 }
 
 // Delete
-async function deleteecologiques(rapportId) {
-  return await ecologique.findOneAndDelete({ rapportId});
+async function deleteecologiques(_id) {
+  return await ecologique.findOneAndDelete({ _id});
 }
 
 module.exports = {
