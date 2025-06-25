@@ -1,10 +1,10 @@
 const review = require('../models/reviewModel.js');
-/*
+
 // Create
 async function createreviews(data) {
   return await review.create(data);
 }
-*/
+
 // Read All
 async function getAllreviews() {
   return await review.find();
@@ -26,7 +26,7 @@ async function deletereviews(_id) {
 }
 
 module.exports = {
-  //createreviews,
+  createreviews,
   getAllreviews,
   getreviewById,
   //updatereviews,
