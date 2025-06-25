@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const congeSchema = new mongoose.Schema({
-  idConge: { type: String, required: true, unique: true },
   dateDebut: { type: Date, required: true },
   dateFin: { type: Date, required: true },
   type: { type: String },

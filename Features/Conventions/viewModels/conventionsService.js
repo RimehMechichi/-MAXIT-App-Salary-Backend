@@ -11,18 +11,18 @@ async function getAllconventions() {
 }
 
 // Read One
-async function getconventionById(rapportId) {
-  return await convention.findOne({ rapportId });
+async function getconventionById(_id) {
+  return await convention.findOne({ _id });
 }
 
 // Update
-async function updateconventions(rapportId, data) {
-  return await convention.findOneAndUpdate({ rapportId }, data, { new: true });
+async function updateconventions(_id, data) {
+  return await convention.findOneAndUpdate({ _id }, data, { new: true });
 }
 
 // Delete
-async function deleteconventions(rapportId) {
-  return await convention.findOneAndDelete({ rapportId});
+async function deleteconventions(_id) {
+  return await convention.findOneAndDelete({ _id});
 }
 
 module.exports = {

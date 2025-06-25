@@ -1,7 +1,7 @@
   const mongoose = require('mongoose');
 
     const ecologiquesSchema = new mongoose.Schema({
-      
+
     titre_eventEco: { type: String, required: true }, 
     description_eventEco: { type: String, required: true },
     date_eventEco: { type: Date , required: true },
@@ -9,4 +9,4 @@
    
   }, { timestamps: true });
   
-  module.exports = mongoose.model('Ecologiques', ecologiquesSchema);
+  module.exports = mongoose.model('ecologiques', ecologiquesSchema);

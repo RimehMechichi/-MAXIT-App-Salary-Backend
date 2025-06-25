@@ -11,18 +11,18 @@ async function getAllannuaires() {
 }
 
 // Read One
-async function getannuaireById(rapportId) {
-  return await annuaire.findOne({ rapportId });
+async function getannuaireById(_id) {
+  return await annuaire.findOne({ _id });
 }
 
 // Update
-async function updateannuaires(rapportId, data) {
-  return await annuaire.findOneAndUpdate({ rapportId }, data, { new: true });
+async function updateannuaires(_id, data) {
+  return await annuaire.findOneAndUpdate({ _id }, data, { new: true });
 }
 
 // Delete
-async function deleteannuaires(rapportId) {
-  return await annuaire.findOneAndDelete({ rapportId});
+async function deleteannuaires(_id) {
+  return await annuaire.findOneAndDelete({ _id});
 }
 
 module.exports = {

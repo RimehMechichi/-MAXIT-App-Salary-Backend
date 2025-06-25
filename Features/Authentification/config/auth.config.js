@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 module.exports = {
-  secret: "appsalary-secret-key"
+  secret: process.env.JWT_KEY
 };
