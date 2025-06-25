@@ -1,6 +1,6 @@
 const service = require('../viewModels/reviewServices.js');
 
-/*
+
 exports.create = async (req, res) => {
   try {
     const reviews = await service.createreviews(req.body);
@@ -9,7 +9,7 @@ exports.create = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-*/
+
 exports.getAll = async (req, res) => {
   try {
     const reviews = await service.getAllreviews();
