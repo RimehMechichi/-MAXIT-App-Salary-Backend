@@ -9,9 +9,8 @@ const conventionRoutes  = require ('./Features/Conventions/routes/conventionRout
 const ecologiqueRoutes  = require ('./Features/Ecologiques/routes/ecologiquesRoutes.js');
 const authRoutes  = require ('./Features/Authentification/routes/authRoutes.js');
 const userRoutes  = require ('./Features/Authentification/routes/userRoutes.js');
-const http = require ('http'); // Ajout de cette ligne
-const { Server } = require ('socket.io'); // Ajout de cette ligne
-
+const http = require ('http'); 
+const { Server } = require ('socket.io');
 
 require('dotenv').config();
 
