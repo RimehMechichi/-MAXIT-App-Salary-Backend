@@ -4,6 +4,7 @@ const morgan = require ('morgan');
 const cors = require ('cors');
 const http = require ('http'); 
 const { Server } = require ('socket.io'); 
+const session = require('express-session'); 
 
 const { notFoundError, errorHandler } = require ('./Middleware/error_handler.js');
 const congeRoutes = require ('./Features/Conge/routes/congeRoutes.js');
@@ -26,6 +27,15 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'a_very_strong_default_secret_key', 
+    resave: false, 
+    saveUninitialized: true, 
+    cookie: { secure: process.env.NODE_ENV === 'production' } 
+  })
+);
 
 app.use('/', congeRoutes);
 app.use('/', annuaireRoutes);

@@ -1,17 +1,66 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  lastName: { type: String, required: true },
-  firstName: { type: String, required: true },
-  username: { type: String },
-  email: { type: String, required: true },
-  phone: { type: String, required: true },
-  picture: { type: String, required: false },
-  departement: { type: String, required: true },
-  password: { type: String, required: true },
-  jobTitle: { type: String, required: true },
-  statusUser: { type: String },
-  statusCompte: { type: String },
+  lastName: { 
+    type: String, 
+    required: true,
+    minlength: 2,
+    maxlength: 50,
+    trim: true 
+  },
+  firstName: { 
+    type: String, 
+    required: true,
+    minlength: 2,
+    maxlength: 50,
+    trim: true 
+  },
+  username: { 
+    type: String,
+    minlength: 3,
+    maxlength: 30,
+    trim: true
+  },
+  email: { 
+    type: String, 
+    required: true,
+    unique: true,
+    match: /^\S+@\S+\.\S+$/ 
+  },
+  phone: { 
+    type: String, 
+    required: true,
+    match: /^[0-9]{8,15}$/ // Numéro entre 8 et 15 chiffres
+  },
+  picture: { 
+    type: String,
+    default: null 
+  },
+  departement: { 
+    type: String, 
+    required: true,
+    trim: true
+  },
+  password: { 
+    type: String, 
+    required: true,
+    minlength: 6 
+  },
+  jobTitle: { 
+    type: String, 
+    required: true,
+    trim: true 
+  },
+  statusUser: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
+  },
+  statusCompte: {
+    type: String,
+    enum: ['enabled', 'disabled'],
+    default: 'enabled'
+  },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: String },
   roles: [
@@ -20,6 +69,6 @@ const userSchema = new mongoose.Schema({
       ref: "Role"
     }
   ],
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

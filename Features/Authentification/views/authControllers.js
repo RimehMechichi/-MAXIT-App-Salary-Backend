@@ -133,51 +133,72 @@ exports.signup = async (req, res) => {
 
 
 
-exports.signin  = async (req, res) => {
+// ... (your existing imports and other functions in auth.controller.js) ...
+
+exports.signin = async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.body.username })
-      .populate('roles', '-__v');
+    let user;
+    // Attempt to find user by username first if provided
+    if (req.body.username) {
+      user = await User.findOne({ username: req.body.username })
+        .populate('roles', '-__v');
+    } 
+    // If username not provided in body, or if user not found by username, try finding by email
+    // This assumes your client will send either 'username' or 'email' for login.
+    if (!user && req.body.email) { 
+      user = await User.findOne({ email: req.body.email })
+        .populate('roles', '-__v');
+    }
 
     if (!user) {
-      return res.status(404).send({ message: 'User not found' });
+      return res.status(404).send({ message: 'User not found.' });
     }
-/*
-    if (user.statusUser === 'nonConfirmé') {
-      return res.status(401).send({ message: 'Account not confirmed yet' });
-    }*/
 
-    if (user.statusCompte === 'bloqué') {
-      return res.status(401).send({ message: 'Account is blocked' });
-    }
+    // --- ENHANCED DEBUGGING LOGS (keep these for now!) ---
+    console.log('--- SIGN-IN DEBUG START ---');
+    console.log('1. User object retrieved by findOne:');
+    console.log('   User ID:     ', user._id);
+    console.log('   Username:    ', user.username); // This will still show undefined if not set in DB
+    console.log('   Email:       ', user.email);
+    console.log('2. Password details for comparison:');
+    console.log('   Input Password (from req.body):   ', req.body.password);
+    console.log('   Stored Hashed Password (from DB): ', user.password);
+    console.log('--- SIGN-IN DEBUG END ---');
+    // --- END ENHANCED DEBUGGING LOGS ---
 
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
+    console.log('Password comparison result (passwordIsValid):', passwordIsValid);
 
     if (!passwordIsValid) {
-      return res.status(401).send({ message: 'Invalid password' });
+      return res.status(401).send({ message: 'Invalid password.' });
     }
 
-    const token = jwt.sign({ id: user.id }, config.secret, { expiresIn: 86400 });
+    const token = jwt.sign({ id: user.id }, config.secret, {
+      expiresIn: 86400 // 24 hours
+    });
 
     const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
 
-    req.session.token = token;
+    // This depends on express-session being correctly installed and configured in server.js
+    req.session.token = token; 
 
     res.status(200).send({
       id: user._id,
       username: user.username,
-      name: user.name,
+      name: user.lastName,
       firstName: user.firstName,
       email: user.email,
       roles: authorities,
-      token: token,
+      accessToken: token,
     });
+
   } catch (error) {
-    console.log(error);
+    console.error('Error signing in:', error);
     res.status(500).json({ message: 'Error signing in' });
   }
 };
 
-
+// ... (rest of your auth.controller.js) ...
 
 exports.signout = async  (req, res) => {
   try {
