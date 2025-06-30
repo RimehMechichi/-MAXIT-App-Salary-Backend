@@ -132,19 +132,14 @@ exports.signup = async (req, res) => {
 };
 
 
-
-// ... (your existing imports and other functions in auth.controller.js) ...
-
 exports.signin = async (req, res) => {
   try {
     let user;
-    // Attempt to find user by username first if provided
     if (req.body.username) {
       user = await User.findOne({ username: req.body.username })
         .populate('roles', '-__v');
     } 
-    // If username not provided in body, or if user not found by username, try finding by email
-    // This assumes your client will send either 'username' or 'email' for login.
+
     if (!user && req.body.email) { 
       user = await User.findOne({ email: req.body.email })
         .populate('roles', '-__v');
@@ -154,17 +149,14 @@ exports.signin = async (req, res) => {
       return res.status(404).send({ message: 'User not found.' });
     }
 
-    // --- ENHANCED DEBUGGING LOGS (keep these for now!) ---
     console.log('--- SIGN-IN DEBUG START ---');
     console.log('1. User object retrieved by findOne:');
     console.log('   User ID:     ', user._id);
-    console.log('   Username:    ', user.username); // This will still show undefined if not set in DB
+    console.log('   Username:    ', user.username); 
     console.log('   Email:       ', user.email);
     console.log('2. Password details for comparison:');
-    console.log('   Input Password (from req.body):   ', req.body.password);
     console.log('   Stored Hashed Password (from DB): ', user.password);
     console.log('--- SIGN-IN DEBUG END ---');
-    // --- END ENHANCED DEBUGGING LOGS ---
 
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
     console.log('Password comparison result (passwordIsValid):', passwordIsValid);
@@ -174,12 +166,11 @@ exports.signin = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id }, config.secret, {
-      expiresIn: 86400 // 24 hours
+      expiresIn: 86400 
     });
 
     const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
 
-    // This depends on express-session being correctly installed and configured in server.js
     req.session.token = token; 
 
     res.status(200).send({
@@ -198,7 +189,6 @@ exports.signin = async (req, res) => {
   }
 };
 
-// ... (rest of your auth.controller.js) ...
 
 exports.signout = async  (req, res) => {
   try {

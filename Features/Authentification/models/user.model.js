@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
   phone: { 
     type: String, 
     required: true,
-    match: /^[0-9]{8,15}$/ // Numéro entre 8 et 15 chiffres
+    match: /^[0-9]{8,15}$/ 
   },
   picture: { 
     type: String,
