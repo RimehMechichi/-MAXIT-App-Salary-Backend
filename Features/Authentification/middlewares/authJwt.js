@@ -1,11 +1,4 @@
-exports.isAdmin = (req, res, next) => {
-  // Vérifier si l'utilisateur est authentifié et a le rôle d'administrateur
-  if (req.user && req.user.role === 'admin' ||'user') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Unauthorized' });
-  }
-};const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const config = require('../config/auth.config.js');
 const db = require('../models'); // Assuming models are available via db
 const User = db.user; // Assuming db.user is defined
