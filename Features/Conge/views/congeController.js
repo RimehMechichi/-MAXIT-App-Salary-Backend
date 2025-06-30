@@ -1,6 +1,13 @@
 const service = require('../viewModels/congeService.js');
+const User = require('/Users/Asus/Desktop/StagePFE/appsalary-backend/Features/Authentification/models/user.model.js');
+const Conge = require('../models/congeModel');
 
 exports.create = async (req, res) => {
+  console.log('Headers:', req.headers);
+  console.log('Body (raw):', req.body);
+  if (!req.body || Object.keys(req.body).length === 0) {
+    return res.status(400).json({ message: 'Request body is empty or missing' });
+  }
   try {
     const debut = new Date(req.body.dateDebut);
     const fin = new Date(req.body.dateFin);
@@ -25,8 +32,12 @@ exports.create = async (req, res) => {
     await conge.save();
 
     res.status(201).json({ message: 'Congé enregistré', conge });
-  } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la création du congé', error });
+ } catch (error) {
+    console.error('Create conge error:', error); // log to console
+    res.status(500).json({ 
+      message: 'Erreur lors de la création du congé', 
+      error: error.message || error.toString() || error // send actual error message
+    });
   }
 };
 

@@ -19,6 +19,7 @@ const eventCalendarRoutes  = require ('./Features/Event_Clalendar/routes/eventCa
 const reviewRoutes  = require ('./Features/Reviews/routes/reviewRoutes.js');
 
 require('dotenv').config();
+require('./Features/Conge/cron/monthlySoldeUpdater.js'); 
 
 const app = express();
 const PORT = process.env.PORT || 8080;
