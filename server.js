@@ -37,6 +37,18 @@ app.use(
     cookie: { secure: process.env.NODE_ENV === 'production' } 
   })
 );
+// --- Migration Script Function ---
+async function migrateUserSoldeRestant() {
+  try {
+    const result = await User.updateMany(
+      { soldeRestant: { $exists: false } },
+      { $set: { soldeRestant: 25 } } 
+    );
+    console.log(`Migration complete: ${result.nModified} users updated with default soldeRestant.`);
+  } catch (error) {
+    console.error('Migration failed:', error);
+  }
+}
 
 app.use('/', congeRoutes);
 app.use('/', annuaireRoutes);
