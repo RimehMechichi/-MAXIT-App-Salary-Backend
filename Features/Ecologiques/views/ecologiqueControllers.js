@@ -3,7 +3,9 @@ const service = require('../viewModels/ecologiqueServices.js');
 exports.create = async (req, res) => {
   try {
     const { titre_eventEco, description_eventEco, date_eventEco } = req.body;
-    const imagePath = req.file ? req.file.path : null;
+
+    // ✅ Chemin URL relatif :
+    const imagePath = req.file ? `/images/${req.file.filename}` : null;
 
     if (!titre_eventEco || !description_eventEco || !date_eventEco || !imagePath) {
       return res.status(400).json({ message: 'All fields are required' });
@@ -21,7 +23,6 @@ exports.create = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.getAll = async (req, res) => {
   try {

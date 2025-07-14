@@ -21,7 +21,9 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const path = require('path');
 
+app.use('/images', express.static(path.join(__dirname, 'Features/Ecologiques/Public/images')));
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
