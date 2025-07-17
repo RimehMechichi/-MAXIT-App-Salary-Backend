@@ -3,67 +3,34 @@ const User = require('/Users/Asus/Desktop/StagePFE/appsalary-backend/Features/Au
 const Conge = require('../models/congeModel');
 
 exports.create = async (req, res) => {
-    console.log('Headers:', req.headers);
-    console.log('Body (raw):', req.body); // Check the raw dates here
-
-    if (!req.body || Object.keys(req.body).length === 0) {
-        return res.status(400).json({ message: 'Request body is empty or missing' });
-    }
-
     try {
         const debut = new Date(req.body.dateDebut);
         const fin = new Date(req.body.dateFin);
 
-        console.log('Parsed dateDebut:', debut); // Check if this is "Invalid Date"
-        console.log('Parsed dateFin:', fin);   // Check if this is "Invalid Date"
-
-        // Check if the parsed dates are valid
         if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
-            console.error('Date parsing failed: One or both dates are invalid.');
             return res.status(400).json({ message: 'Invalid date format provided.' });
-        }
-
-        const joursAbsence = Math.ceil((fin.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24)) + 1; // Use .getTime() for robust difference
-        console.log('Calculated joursAbsence:', joursAbsence); // See if this is NaN
-
-        if (isNaN(joursAbsence)) {
-            console.error('joursAbsence calculation resulted in NaN.');
-            return res.status(500).json({ message: 'Error calculating duration of absence.' });
         }
 
         const user = await User.findById(req.body.userId);
         if (!user) {
-            console.warn('User not found for ID:', req.body.userId);
             return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
 
-        console.log('User soldeRestant before calculation:', user.soldeRestant); // Check initial user balance
-
-        if (user.soldeRestant < joursAbsence) {
-            return res.status(400).json({ message: 'Solde insuffisant pour cette absence' });
-        }
-
-        user.soldeRestant -= joursAbsence;
-        console.log('User soldeRestant after subtraction (for saving user):', user.soldeRestant); // Check this value
-        await user.save();
-
         const conge = new Conge({
             ...req.body,
-            soldeRestant: user.soldeRestant, // This is the value Mongoose is complaining about
+            statut: 'En attente', // Always set default
+            soldeRestant: user.soldeRestant, // Initial snapshot
         });
 
-        console.log('Conge object about to be saved:', conge); // Inspect the full conge object
         await conge.save();
 
-        res.status(201).json({ message: 'Congé enregistré', conge });
+        res.status(201).json({ message: 'Demande de congé enregistrée', conge });
     } catch (error) {
         console.error('Create conge error:', error);
-        res.status(500).json({
-            message: 'Erreur lors de la création du congé',
-            error: error.message || error.toString() || error
-        });
+        res.status(500).json({ message: 'Erreur lors de la création du congé', error });
     }
 };
+
 
 exports.getAll = async (req, res) => {
   try {
@@ -93,15 +60,51 @@ exports.getByUser = async (req, res) => {
   }
 };
 
-
 exports.update = async (req, res) => {
-  try {
-    const updated = await service.updateConge(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: 'Conge not found' });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    const { congeId } = req.params;
+    const { statut } = req.body;
+
+    if (!['Approuvé', 'Refusé', 'En attente'].includes(statut)) {
+        return res.status(400).json({ message: 'Statut invalide' });
+    }
+
+    try {
+        const conge = await Conge.findById(congeId);
+        if (!conge) {
+            return res.status(404).json({ message: 'Congé non trouvé' });
+        }
+
+        if (conge.statut === 'Approuvé') {
+            return res.status(400).json({ message: 'Ce congé a déjà été approuvé' });
+        }
+
+        if (statut === 'Approuvé') {
+            const jours = Math.ceil(
+                (new Date(conge.dateFin) - new Date(conge.dateDebut)) / (1000 * 60 * 60 * 24)
+            ) + 1;
+
+            const user = await User.findById(conge.userId);
+            if (!user) {
+                return res.status(404).json({ message: 'Utilisateur non trouvé' });
+            }
+
+            if (user.soldeRestant < jours) {
+                return res.status(400).json({ message: 'Solde insuffisant' });
+            }
+
+            user.soldeRestant -= jours;
+            await user.save();
+            conge.soldeRestant = user.soldeRestant;
+        }
+
+        conge.statut = statut;
+        await conge.save();
+
+        res.status(200).json({ message: 'Statut mis à jour', conge });
+    } catch (error) {
+        console.error('Update statut error:', error);
+        res.status(500).json({ message: 'Erreur lors de la mise à jour', error });
+    }
 };
 
 exports.delete = async (req, res) => {
