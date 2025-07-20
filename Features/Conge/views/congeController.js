@@ -18,8 +18,7 @@ exports.create = async (req, res) => {
 
         const conge = new Conge({
             ...req.body,
-            statut: 'En attente', // Always set default
-            soldeRestant: user.soldeRestant, // Initial snapshot
+            statut: 'En attente', 
         });
 
         await conge.save();
@@ -94,6 +93,7 @@ exports.update = async (req, res) => {
 
             user.soldeRestant -= jours;
             await user.save();
+
             conge.soldeRestant = user.soldeRestant;
         }
 
