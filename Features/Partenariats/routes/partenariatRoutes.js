@@ -7,5 +7,6 @@ router.get('/partenariat', partenariatController.getAll);
 router.get('/partenariat/:id', partenariatController.getById);
 router.put('/partenariat/:id', partenariatController.update);
 router.delete('/partenariat/:id', partenariatController.delete);
+router.get('/check-exists', partenariatController.checkExists);
 
 module.exports = router;
