@@ -4,7 +4,7 @@ mongoose.Promise = global.Promise;
 const db = {};
 
 db.mongoose = mongoose;
-db.user = require('./user.model.js'); // ✅ ce chemin doit être correct
+db.user = require('./user.model.js'); 
 db.role = require('./role.model.js');
 db.ROLES = ['user', 'admin'];
 
