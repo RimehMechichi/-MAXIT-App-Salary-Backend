@@ -23,6 +23,14 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 //const hostname = process.env.HOSTNAME;
+const session = require('express-session');
+
+app.use(session({
+  secret: '70348810-6b97-11f0-922e-257e366012f6',   
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }    
+}));
 
 app.use(cors());
 app.use(morgan("dev"));
