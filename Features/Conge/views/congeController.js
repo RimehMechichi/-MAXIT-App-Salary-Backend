@@ -1,34 +1,35 @@
 const service = require('../viewModels/congeService.js');
+const User = require('/Users/Asus/Desktop/StagePFE/appsalary-backend/Features/Authentification/models/user.model.js');
+const Conge = require('../models/congeModel');
 
 exports.create = async (req, res) => {
-  try {
-    const debut = new Date(req.body.dateDebut);
-    const fin = new Date(req.body.dateFin);
+    try {
+        const debut = new Date(req.body.dateDebut);
+        const fin = new Date(req.body.dateFin);
 
-    const joursAbsence = Math.ceil((fin - debut) / (1000 * 60 * 60 * 24)) + 1;
+        if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
+            return res.status(400).json({ message: 'Invalid date format provided.' });
+        }
 
-    const user = await User.findById(req.body.idUser);
-    if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
+        const user = await User.findById(req.body.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé' });
+        }
 
-    if (user.soldeRestant < joursAbsence) {
-      return res.status(400).json({ message: 'Solde insuffisant pour cette absence' });
+        const conge = new Conge({
+            ...req.body,
+            statut: 'En attente', 
+        });
+
+        await conge.save();
+
+        res.status(201).json({ message: 'Demande de congé enregistrée', conge });
+    } catch (error) {
+        console.error('Create conge error:', error);
+        res.status(500).json({ message: 'Erreur lors de la création du congé', error });
     }
-
-    user.soldeRestant -= joursAbsence;
-    await user.save();
-
-    const conge = new Conge({
-      ...req.body,
-      soldeRestant: user.soldeRestant, 
-    });
-
-    await conge.save();
-
-    res.status(201).json({ message: 'Congé enregistré', conge });
-  } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de la création du congé', error });
-  }
 };
+
 
 exports.getAll = async (req, res) => {
   try {
@@ -49,14 +50,61 @@ exports.getById = async (req, res) => {
   }
 };
 
-exports.update = async (req, res) => {
+exports.getByUser = async (req, res) => {
   try {
-    const updated = await service.updateConge(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: 'Conge not found' });
-    res.json(updated);
+    const conges = await service.getCongesByUser(req.params.userId);
+    res.json(conges);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+exports.update = async (req, res) => {
+    const { congeId } = req.params;
+    const { statut } = req.body;
+
+    if (!['Approuvé', 'Refusé', 'En attente'].includes(statut)) {
+        return res.status(400).json({ message: 'Statut invalide' });
+    }
+
+    try {
+        const conge = await Conge.findById(congeId);
+        if (!conge) {
+            return res.status(404).json({ message: 'Congé non trouvé' });
+        }
+
+        if (conge.statut === 'Approuvé') {
+            return res.status(400).json({ message: 'Ce congé a déjà été approuvé' });
+        }
+
+        if (statut === 'Approuvé') {
+            const jours = Math.ceil(
+                (new Date(conge.dateFin) - new Date(conge.dateDebut)) / (1000 * 60 * 60 * 24)
+            ) + 1;
+
+            const user = await User.findById(conge.userId);
+            if (!user) {
+                return res.status(404).json({ message: 'Utilisateur non trouvé' });
+            }
+
+            if (user.soldeRestant < jours) {
+                return res.status(400).json({ message: 'Solde insuffisant' });
+            }
+
+            user.soldeRestant -= jours;
+            await user.save();
+
+            conge.soldeRestant = user.soldeRestant;
+        }
+
+        conge.statut = statut;
+        await conge.save();
+
+        res.status(200).json({ message: 'Statut mis à jour', conge });
+    } catch (error) {
+        console.error('Update statut error:', error);
+        res.status(500).json({ message: 'Erreur lors de la mise à jour', error });
+    }
 };
 
 exports.delete = async (req, res) => {

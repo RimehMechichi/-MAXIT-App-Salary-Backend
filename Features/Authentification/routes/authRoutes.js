@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-// Destructure the uploadSingleImage middleware from the multer-config module
 const { uploadSingleImage } = require('../middlewares/multer-config.js');
 
 const { signup, signin, signout, forgotPassword, resetPassword } = require("../views/authControllers.js");

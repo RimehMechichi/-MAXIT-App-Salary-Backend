@@ -2,7 +2,10 @@
   
   exports.create = async (req, res) => {
   try {
-    const eventCalendar = await service.createEventcalendar(req.body);
+    const { _id, ...bodyWithoutId } = req.body;
+    
+    console.log("testtttttt ", JSON.stringify(bodyWithoutId));
+    const eventCalendar = await service.createEventcalendar(bodyWithoutId);
     res.status(201).json(eventCalendar);
   } catch (err) {
     res.status(500).json({ message: err.message });
