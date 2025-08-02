@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { USER_STATUS, ACCOUNT_STATUS } = require('../config/user.constants');
 
 const userSchema = new mongoose.Schema({
   lastName: { 
@@ -53,13 +54,13 @@ const userSchema = new mongoose.Schema({
   },
   statusUser: {
     type: String,
-    enum: ['active', 'inactive'],
-    default: 'active'
+    enum: Object.values(USER_STATUS),
+    default: USER_STATUS.ACTIVE
   },
   statusCompte: {
     type: String,
-    enum: ['enabled', 'disabled'],
-    default: 'enabled'
+    enum: Object.values(ACCOUNT_STATUS),
+    default: ACCOUNT_STATUS.UNCONFIRMED
   },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: String },
