@@ -6,6 +6,9 @@ const { signUpEmailOptions, forgotPasswordEmailOptions } = require('../config/em
 const emailConfig = require('../config/email.config.js');
 const db = require('../models/index.js');
 const { USER_STATUS, ACCOUNT_STATUS } = require('../config/user.constants');
+const axios = require('axios');
+const twilio = require('twilio');
+require('dotenv').config();
 
 const User = db.user;
 const Role = db.role;
@@ -14,6 +17,18 @@ const Role = db.role;
 const generateResetToken = function () {
   const resetToken = jwt.sign({ data: 'resetToken' }, 'projetPI-secret-key', { expiresIn: '1h' });
   return resetToken;
+}
+// Initialize the Twilio client using environment variables
+const client = twilio(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+
+// Generate a 6-digit numeric OTP
+const generateNumericOtp = function () {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 exports.signup = async (req, res) => {
@@ -46,8 +61,8 @@ exports.signup = async (req, res) => {
       departement,
       password: hashedPassword,
       jobTitle,
-    statusUser: USER_STATUS.ACTIVE,
-    statusCompte: ACCOUNT_STATUS.UNCONFIRMED,
+      statusUser: USER_STATUS.ACTIVE,
+      statusCompte: ACCOUNT_STATUS.UNCONFIRMED,
     });
 
     await newUser.save();
@@ -131,7 +146,6 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
-    // Generate and save token
     const resetToken = generateResetToken();
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
@@ -148,7 +162,7 @@ exports.forgotPassword = async (req, res) => {
     console.log('Password reset email sent to:', email);
     return res.status(200).json({ 
       message: 'If an account with that email exists, a reset link has been sent',
-      token: resetToken // Add this line to return the token
+      token: resetToken 
     });
 
   } catch (error) {
@@ -184,8 +198,6 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
-    // Fix the validation error by assigning the correct enum values before saving
-    // The logs indicate these fields have incorrect values, so we reset them to the defaults or correct them.
     user.statusUser = 'actif'; 
     user.statusCompte = 'non confirmé'; 
 
@@ -202,4 +214,50 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-exports.generateResetToken = generateResetToken;
+exports.forgotPasswordWithPhone = async (req, res) => {
+    const { phone } = req.body;
+
+    try {
+        const user = await User.findOne({ phone: phone });
+
+        if (!user) {
+            return res.status(200).json({ 
+                message: 'If an account with that phone number exists, a reset code has been sent.'
+            });
+        }
+        
+        const resetCode = generateNumericOtp();
+        user.resetToken = resetCode;
+        user.resetTokenExpiration = Date.now() + 3600000; // 1 hour
+        await user.save({ modifiedOnly: true });
+
+        // Attempt to send the SMS
+        try {
+            await client.messages.create({
+                body: `Your password reset code is: ${resetCode}`,
+                to: phone,
+                from: twilioPhoneNumber,
+            });
+
+            console.log(`[SMS Service] SMS sent successfully to ${phone}`);
+            
+            // Send a success response. Do not include the OTP in the response body.
+            return res.status(200).json({
+                message: 'If an account with that phone number exists, a reset code has been sent.'
+            });
+
+        } catch (apiError) {
+            // Log the specific Twilio API error and send a 500 response
+            console.error(`[SMS Service] Failed to send SMS via Twilio:`, apiError.message);
+            console.error(`[Twilio Error Code]`, apiError.code);
+            return res.status(500).json({
+                message: 'Error sending SMS. Please try again later.'
+            });
+        }
+
+    } catch (dbError) {
+        console.error('Database error in forgotPasswordWithPhone:', dbError);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
