@@ -352,7 +352,7 @@ static async updateUserProfile(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const picturePath = `/images/${req.file.filename}`;
+    const picturePath = `/images/${req.file.filename}`;q
     console.log(`New picture path: ${picturePath}`);
 
     const updatedUser = await User.findByIdAndUpdate(
