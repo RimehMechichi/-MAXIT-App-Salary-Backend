@@ -47,3 +47,19 @@ exports.delete = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+exports.checkExists = async (req, res) => {
+  try {
+    const { companyName, email } = req.query;
+
+    if (!companyName && !email) {
+      return res.status(400).json({ message: 'companyName or email required' });
+    }
+
+    const existing = await service.checkIfExists({ companyName, email });
+
+    res.json({ exists: !!existing });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
