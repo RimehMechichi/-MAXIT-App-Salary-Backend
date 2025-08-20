@@ -25,10 +25,20 @@ async function deletepartenariat(_id) {
   return await partenariat.findOneAndDelete({ _id });
 }
 
+async function checkIfExists({ companyName, email }) {
+  return await partenariat.findOne({
+    $or: [
+      { companyName: companyName },
+      { partEmail: email }
+    ]
+  });
+}
+
 module.exports = {
   createpartenariat,
   getAllpartenariats,
   getpartenariatById,
   updatepartenariat,
   deletepartenariat,
+  checkIfExists, 
 };

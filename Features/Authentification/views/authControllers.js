@@ -1,89 +1,35 @@
-const config = require( '../config/auth.config.js');
-const nodemailer = require ('nodemailer');
-const jwt = require ("jsonwebtoken");
-const bcrypt = require ("bcryptjs");
-const { signUpEmailOptions, forgotPasswordEmailOptions } = require ('../config/emailOptions.config.js');
-const emailConfig = require ('../config/email.config.js');
+const config = require('../config/auth.config.js');
+const nodemailer = require('nodemailer');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const { signUpEmailOptions, forgotPasswordEmailOptions } = require('../config/emailOptions.config.js');
+const emailConfig = require('../config/email.config.js');
 const db = require('../models/index.js');
+const { USER_STATUS, ACCOUNT_STATUS } = require('../config/user.constants');
+const axios = require('axios');
+const twilio = require('twilio');
+require('dotenv').config();
 
 const User = db.user;
 const Role = db.role;
-/*
-exports.signup = async (req, res) => {
-  const {
-    lastName,
-    firstName,
-    email,
-    phone,
-    picture,
-    departement,
-    password,
-    jobTitle,
-  } = req.body;
 
-  const adminEmail = "rimehmechichi08@gmail.com";
-
-  try {
-    const existingUser = await User.find({ email });
-
-    if (existingUser) {
-      if (existingUser.statusCompte === 'bloqué') {
-        return res.status(409).json({ message: 'Account is blocked. Contact administrator for assistance.' });
-      }
-      return res.status(409).json({ message: 'User already exists' });
-    }
-
-    const hashedPassword = bcrypt.hashSync(password, 8);
-
-    const newUser = new User({
-      lastName,
-      firstName,
-      email,
-      phone,
-      picture,
-      departement,
-      password: hashedPassword,
-      jobTitle,
-      statusUser: 'Confirmé',
-      statusCompte: 'actif',
-    });
+// Generate reset token function
+const generateResetToken = function () {
+  const resetToken = jwt.sign({ data: 'resetToken' }, 'projetPI-secret-key', { expiresIn: '1h' });
+  return resetToken;
+}
+// Initialize the Twilio client using environment variables
+const client = twilio(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 
-    const roles = await Role.find({ name: { $in: req.body.roles } }).exec();
-
-    if (!roles) {
-     return res.status(500).json({ message: 'Error finding roles' });
-    }
-
-    User.roles = roles.map(role => role._id);
-    await newUser.save();
-    
-    // Envoi mail à l'admin
-    const transporter = nodemailer.createTransport(emailConfig);
-    const mailOptions = {
-      from: signUpEmailOptions.from,
-      to: adminEmail,
-      subject: signUpEmailOptions.subject,
-      html: signUpEmailOptions.html
-        .replace('{{username}}', firstName + ' ' + lastName)
-        .replace('{{email}}', email),
-    };
-
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent: ' + info.response);
-      return res.status(201).json({ message: 'User registered. Confirmation email sent.' });
-    } catch (error) {
-      console.error('Error sending email:', error);
-      return res.status(500).json({ message: 'User saved but email failed to send.' });
-    }
-
-  } catch (error) {
-    console.error('Signup error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
-*/
+// Generate a 6-digit numeric OTP
+const generateNumericOtp = function () {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 exports.signup = async (req, res) => {
   const {
@@ -95,12 +41,11 @@ exports.signup = async (req, res) => {
     departement,
     password,
     jobTitle,
+    soldeRestant,
   } = req.body;
-    console.log("✅ Type de User.findOne:", typeof User.findOne); 
 
   try {
     const existingUser = await User.findOne({ email });
-    console.log("🕵️‍♀️ Existing user trouvé ?", existingUser);
 
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
@@ -117,20 +62,23 @@ exports.signup = async (req, res) => {
       departement,
       password: hashedPassword,
       jobTitle,
-      statusUser: 'Confirmé',
-      statusCompte: 'actif',
+      soldeRestant: Number(soldeRestant), 
+      statusUser: USER_STATUS.ACTIVE,
+      statusCompte: ACCOUNT_STATUS.UNCONFIRMED,
     });
 
     await newUser.save();
 
-    return res.status(201).json({ message: 'User registered successfully.' });
+    return res.status(201).json({ 
+      message: 'User registered successfully.',
+      soldeRestant: newUser.soldeRestant 
+    });
 
   } catch (error) {
     console.error('Signup error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 
 exports.signin = async (req, res) => {
   try {
@@ -138,9 +86,9 @@ exports.signin = async (req, res) => {
     if (req.body.username) {
       user = await User.findOne({ username: req.body.username })
         .populate('roles', '-__v');
-    } 
+    }
 
-    if (!user && req.body.email) { 
+    if (!user && req.body.email) {
       user = await User.findOne({ email: req.body.email })
         .populate('roles', '-__v');
     }
@@ -149,17 +97,7 @@ exports.signin = async (req, res) => {
       return res.status(404).send({ message: 'User not found.' });
     }
 
-    console.log('--- SIGN-IN DEBUG START ---');
-    console.log('1. User object retrieved by findOne:');
-    console.log('   User ID:     ', user._id);
-    console.log('   Username:    ', user.username); 
-    console.log('   Email:       ', user.email);
-    console.log('2. Password details for comparison:');
-    console.log('   Stored Hashed Password (from DB): ', user.password);
-    console.log('--- SIGN-IN DEBUG END ---');
-
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
-    console.log('Password comparison result (passwordIsValid):', passwordIsValid);
 
     if (!passwordIsValid) {
       return res.status(401).send({ message: 'Invalid password.' });
@@ -171,7 +109,7 @@ exports.signin = async (req, res) => {
 
     const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
 
-    req.session.token = token; 
+    req.session.token = token;
 
     res.status(200).send({
       id: user._id,
@@ -181,6 +119,7 @@ exports.signin = async (req, res) => {
       email: user.email,
       roles: authorities,
       accessToken: token,
+      soldeRestant: user.soldeRestant, 
     });
 
   } catch (error) {
@@ -189,8 +128,7 @@ exports.signin = async (req, res) => {
   }
 };
 
-
-exports.signout = async  (req, res) => {
+exports.signout = async (req, res) => {
   try {
     req.session = null;
     return res.status(200).send({ message: "You've been signed out!" });
@@ -199,66 +137,133 @@ exports.signout = async  (req, res) => {
   }
 };
 
-exports.forgotPassword = async  (req, res) => {
+exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(200).json({ 
+        message: 'If an account with that email exists, a reset link has been sent'
+      });
     }
-    console.log(user.username)
+
     const resetToken = generateResetToken();
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; 
-    const resetPasswordLink = `http://localhost:4200/forget/${resetToken}`;
+    user.resetPasswordExpires = Date.now() + 3600000;
+    
+    await user.save({ validateModifiedOnly: true });
 
-    await user.save();
+    const resetPasswordLink = `${process.env.FRONTEND_URL || 'http://192.168.0.97:8080'}/api/reset-password?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport(emailConfig);
     const mailOptions = forgotPasswordEmailOptions(email, resetPasswordLink);
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log(error);
-        return res.status(500).json({ message: 'Error sending email' });
-      }
-      console.log('Email sent: ' + info.response);
-      res.json({ message: 'User registration successful. Confirmation email sent to admin.' });
+    await transporter.sendMail(mailOptions);
+    
+    console.log('Password reset email sent to:', email);
+    return res.status(200).json({ 
+      message: 'If an account with that email exists, a reset link has been sent',
+      token: resetToken 
     });
-    res.json({ resetToken });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Error resetting password' });
+    console.error('Error in forgotPassword:', error);
+    return res.status(500).json({ message: 'Error processing password reset request' });
   }
 };
 
-exports.resetPassword = async  (req, res) => {
+exports.resetPassword = async (req, res) => {
   try {
-    const { resetToken, newPassword } = req.body;
+    const { token, newPassword, confirmPassword } = req.body;
+    console.log('Received token:', token);
+
+    if (!token || !newPassword || !confirmPassword) {
+      console.log('Validation failed: Missing fields.');
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      console.log('Validation failed: Passwords do not match.');
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
     const user = await User.findOne({
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: { $gt: Date.now() },
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
     });
 
+    console.log('Database query result:', user);
+
     if (!user) {
+      console.log('Validation failed: Invalid or expired reset token.');
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
-    console.log("=>", user.username)
+
+    user.statusUser = 'actif'; 
+    user.statusCompte = 'non confirmé'; 
+
     user.password = bcrypt.hashSync(newPassword, 8);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.json({ message: 'Password reset successful' });
+    return res.status(200).json({ message: 'Password reset successful' });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Error resetting password' });
+    console.error('Error in resetPassword:', error);
+    return res.status(500).json({ message: 'Error resetting password' });
   }
 };
 
-exports.generateResetToken = function () {
-  const resetToken = jwt.sign({ data: 'resetToken' }, 'projetPI-secret-key', { expiresIn: '1h' });
-  return resetToken;
-}
+exports.forgotPasswordWithPhone = async (req, res) => {
+    const { phone } = req.body;
+
+    try {
+        const user = await User.findOne({ phone: phone });
+
+        if (!user) {
+            return res.status(200).json({ 
+                message: 'If an account with that phone number exists, a reset code has been sent.'
+            });
+        }
+        
+        const resetCode = generateNumericOtp();
+        user.resetToken = resetCode;
+        user.resetTokenExpiration = Date.now() + 3600000; // 1 hour
+        await user.save({ modifiedOnly: true });
+
+        // Attempt to send the SMS
+        try {
+            await client.messages.create({
+                body: `Your password reset code is: ${resetCode}`,
+                to: phone,
+                from: twilioPhoneNumber,
+            });
+
+            console.log(`[SMS Service] SMS sent successfully to ${phone}`);
+            
+            // Send a success response. Do not include the OTP in the response body.
+            return res.status(200).json({
+                message: 'If an account with that phone number exists, a reset code has been sent.'
+            });
+
+        } catch (apiError) {
+            // Log the specific Twilio API error and send a 500 response
+            console.error(`[SMS Service] Failed to send SMS via Twilio:`, apiError.message);
+            console.error(`[Twilio Error Code]`, apiError.code);
+            return res.status(500).json({
+                message: 'Error sending SMS. Please try again later.'
+            });
+        }
+
+    } catch (dbError) {
+        console.error('Database error in forgotPasswordWithPhone:', dbError);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
 
