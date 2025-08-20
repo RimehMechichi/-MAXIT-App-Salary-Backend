@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     match: /^[0-9]{8,15}$/ 
   },
+  congeRestant: {
+    type: Number,
+    required: true,
+  },
   picture: { 
     type: String,
     default: null 
