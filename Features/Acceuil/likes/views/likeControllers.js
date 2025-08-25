@@ -2,20 +2,15 @@ const service = require('../viewModels/likeServices.js');
 
 exports.create = async (req, res) => {
   try {
-    const { titre_eventEco, description_eventEco, date_eventEco } = req.body;
+    const { like, dislike } = req.body;
 
-    // ✅ Chemin URL relatif :
-    const imagePath = req.file ? `/images/${req.file.filename}` : null;
-
-    if (!titre_eventEco || !description_eventEco || !date_eventEco || !imagePath) {
+    if (!like || !dislike) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     const newEvent = await service.createlikes({
-      titre_eventEco,
-      description_eventEco,
-      date_eventEco,
-      image_eventEco: imagePath,
+      like,
+      dislike,
     });
 
     res.status(201).json(newEvent);

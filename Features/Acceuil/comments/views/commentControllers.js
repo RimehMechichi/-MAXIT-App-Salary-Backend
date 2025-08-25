@@ -2,20 +2,21 @@ const service = require('../viewModels/commentServices.js');
 
 exports.create = async (req, res) => {
   try {
-    const { titre_eventEco, description_eventEco, date_eventEco } = req.body;
+    const { titre_cmnt, description_cmnt, date_cmnt, nombres_cmnt} = req.body;
 
     // ✅ Chemin URL relatif :
     const imagePath = req.file ? `/images/${req.file.filename}` : null;
 
-    if (!titre_eventEco || !description_eventEco || !date_eventEco || !imagePath) {
+    if (!titre_cmnt || !description_cmnt || !date_cmnt || !imagePath || !nombres_cmnt) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     const newEvent = await service.createcomments({
-      titre_eventEco,
-      description_eventEco,
-      date_eventEco,
-      image_eventEco: imagePath,
+      titre_cmnt,
+      description_cmnt,
+      date_cmnt,
+      image_cmnt: imagePath,
+      nombres_cmnt,
     });
 
     res.status(201).json(newEvent);
