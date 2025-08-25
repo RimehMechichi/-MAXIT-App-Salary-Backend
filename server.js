@@ -17,7 +17,7 @@ const ideaBoxRoutes  = require ('./Features/BoxDidees/routes/ideaBoxRoutes.js');
 const partenariatRoutes  = require ('./Features/Partenariats/routes/partenariatRoutes.js');
 const eventCalendarRoutes  = require ('./Features/Event_Clalendar/routes/eventCalendarRoutes.js');
 const reviewRoutes  = require ('./Features/Reviews/routes/reviewRoutes.js');
-
+const commentRoutes = require ('./Features/Acceuil/comments/routes/commentRoutes.js')
 require('dotenv').config();
 require('./Features/Conge/cron/monthlySoldeUpdater.js'); 
 
@@ -62,6 +62,8 @@ app.use('/', ideaBoxRoutes);
 app.use('/', partenariatRoutes);
 app.use('/', eventCalendarRoutes);
 app.use('/', reviewRoutes);
+app.use('/acceuil', commentRoutes);
+
 
 const db = require("./Features/Authentification/models/index.js");
 
