@@ -1,36 +1,67 @@
-const like = require('../models/likesModels');
+const Like = require('../models/likesModels.js'); 
 
-// Create
-async function createlikes(data) {
-  return await like.create(data);
+async function findLikeByUserAndAcceuil(userId, acceuilItemId) {
+  return await Like.findOne({ userId, acceuilItemId, like: true });
 }
 
-// Read All
+async function deleteLike(likeId) {
+  return await Like.findByIdAndDelete(likeId);
+}
+
+async function createlike(data) {
+  const like = new Like(data);
+  return await like.save();
+}
+
+async function findDislikeByUserAndAcceuil(userId, acceuilItemId) {
+  return await Like.findOne({ userId, acceuilItemId, dislike: true });
+}
+
+async function deleteDislike(dislikeId) {
+  return await Like.findByIdAndDelete(dislikeId);
+}
+
+// Créer un nouveau dislike
+async function createdislike(data) {
+  const dislike = new Like(data);
+  return await dislike.save();
+}
+
+// Obtenir tous les likes d’un item
+async function getLikesForAcceuilItem(acceuilItemId) {
+  return await Like.find({ acceuilItemId, like: true });
+}
+
+// Obtenir tous les likes/dislikes
 async function getAlllikes() {
-  return await like.find();
+  return await Like.find();
 }
 
-// Read One
-async function getlikeById(_id) {
-  return await like.findOne({ _id });
+// Obtenir un like par ID
+async function getlikeById(id) {
+  return await Like.findById(id);
 }
 
-// Update
-async function updatelikes(_id, data) {
-  return await like.findOneAndUpdate({ _id }, data, { new: true });
+// Mettre à jour un like/dislike
+async function updatelikes(id, data) {
+  return await Like.findByIdAndUpdate(id, data, { new: true });
 }
 
-// Delete
-async function deletelikes(_id) {
-  return await like.findOneAndDelete({ _id});
+// Supprimer par ID
+async function deleteById(id) {
+  return await Like.findByIdAndDelete(id);
 }
 
 module.exports = {
-  createlikes,
+  findLikeByUserAndAcceuil,
+  deleteLike,
+  createlike,
+  findDislikeByUserAndAcceuil,
+  deleteDislike,
+  createdislike,
+  getLikesForAcceuilItem,
   getAlllikes,
   getlikeById,
   updatelikes,
-  deletelikes,
+  delete: deleteById,
 };
-
-
