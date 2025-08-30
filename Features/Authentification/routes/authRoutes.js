@@ -11,7 +11,7 @@ const {
   resetPassword, 
   forgotPasswordWithPhone,
   verifyOtp,
-  verifyOtpAndResetPassword,
+  resetPasswordWithPhone ,
   sendOtp
 } = require("../views/authControllers.js");
 
@@ -27,7 +27,6 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/forgot-password-phone', forgotPasswordWithPhone);
 router.post('/verify-otp', verifyOtp);
-router.post('/verify-otp-reset', verifyOtpAndResetPassword);
-router.post('/send-otp', sendOtp);
+router.post('/reset-password-with-phone', resetPasswordWithPhone); // <-- Correct Route
 
 module.exports = router;
