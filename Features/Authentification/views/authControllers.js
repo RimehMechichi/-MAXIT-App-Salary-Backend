@@ -39,42 +39,76 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
 }
 
 // In-memory storage for OTPs (use Redis in production)
-const otpStore = new Map();
+// ✅ Initialize OTP store globally if not already set
+if (!global.otpStore) {
+  global.otpStore = new Map();
+}
 
 // Generate a 6-digit numeric OTP
 const generateNumericOtp = function () {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Store OTP with expiration (5 minutes)
-const storeOtp = function(phone, otp) {
-  otpStore.set(phone, {
+// ✅ Store OTP with expiration (5 minutes)
+const storeOtp = (phone, otp) => {
+  const normalizedPhone = phone.startsWith('+') ? phone : `+216${phone}`;
+
+  global.otpStore.set(normalizedPhone, {
     otp,
-    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+    expiresAt: Date.now() + 5 * 60 * 1000
   });
-  console.log(`🔢 OTP for ${phone}: ${otp} (valid for 5 minutes)`);
-}
 
-// Verify OTP
-const verifyOtp = function(phone, otp) {
-  const storedData = otpStore.get(phone);
-  
-  if (!storedData) {
-    return { success: false, message: 'OTP not found or expired' };
-  }
+  console.log(`🔢 OTP for ${normalizedPhone}: ${otp} (valid for 5 minutes)`);
+};
 
-  if (Date.now() > storedData.expiresAt) {
-    otpStore.delete(phone);
-    return { success: false, message: 'OTP expired' };
-  }
 
-  if (storedData.otp === otp) {
-    otpStore.delete(phone);
-    return { success: true, message: 'OTP verified successfully' };
-  } else {
-    return { success: false, message: 'Invalid OTP' };
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    console.log("📩 Incoming OTP verification request:", { phone, otp });
+
+    if (!phone || !otp) {
+      return res.status(400).json({ message: 'Phone and OTP are required' });
+    }
+
+    // ✅ Always normalize the phone number before looking up
+    const normalizedPhone = phone.startsWith('+') ? phone : `+216${phone}`;
+
+    const storedOtpData = global.otpStore.get(normalizedPhone);
+    console.log("📦 Stored OTP data:", storedOtpData);
+
+    if (!storedOtpData) {
+      console.log("❌ No OTP found for this phone:", normalizedPhone);
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    if (Date.now() > storedOtpData.expiresAt) {
+      console.log("⏳ OTP expired for:", normalizedPhone);
+      global.otpStore.delete(normalizedPhone);
+      return res.status(400).json({ message: 'OTP expired' });
+    }
+
+    if (storedOtpData.otp !== otp) {
+      console.log("❌ Invalid OTP provided");
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    // ✅ OTP is correct → remove it
+    global.otpStore.delete(normalizedPhone);
+    console.log("✅ OTP verified successfully for:", normalizedPhone);
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully'
+    });
+
+  } catch (error) {
+    console.error("🔥 Unexpected error in verifyOtp:", error);
+    return res.status(500).json({ message: 'Error verifying OTP' });
   }
-}
+};
+
 
 exports.signup = async (req, res) => {
   const {
@@ -333,35 +367,12 @@ exports.forgotPasswordWithPhone = async (req, res) => {
   }
 };
 
-exports.verifyOtp = async (req, res) => {
+
+exports.resetPasswordWithPhone = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
-    
-    if (!phone || !otp) {
-      return res.status(400).json({ error: 'Phone and OTP are required' });
-    }
+    const { phone, newPassword, confirmPassword } = req.body;
 
-    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-    
-    const result = verifyOtp(formattedPhone, otp);
-    
-    if (result.success) {
-      return res.json({ success: true, message: 'OTP verified successfully' });
-    } else {
-      return res.status(400).json({ error: result.message });
-    }
-
-  } catch (error) {
-    console.error('❌ Error verifying OTP:', error);
-    res.status(500).json({ error: 'Failed to verify OTP' });
-  }
-};
-
-exports.verifyOtpAndResetPassword = async (req, res) => {
-  try {
-    const { phone, otp, newPassword, confirmPassword } = req.body;
-    
-    if (!phone || !otp || !newPassword || !confirmPassword) {
+    if (!phone || !newPassword || !confirmPassword) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -369,31 +380,58 @@ exports.verifyOtpAndResetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Passwords do not match' });
     }
 
-    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-    
-    const otpResult = verifyOtp(formattedPhone, otp);
-    
-    if (!otpResult.success) {
-      return res.status(400).json({ message: otpResult.message });
+const cleanedPhone = phone.startsWith('+216') ? phone.substring(4) : phone;
+const user = await User.findOne({ phone: cleanedPhone }).select('+password');
+
+    if (!user) {
+      console.log('❌ User not found for phone:', phone);
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    const user = await User.findOne({ phone: formattedPhone });
+    // Hash and save new password
+    user.password = bcrypt.hashSync(newPassword, 8);
+    await user.save();
+
+    console.log('🔑 New hashed password saved:', user.password);
+
+    return res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    console.error('❌ Error in resetPasswordWithPhone:', error);
+    return res.status(500).json({ message: 'Error resetting password' });
+  }
+};exports.resetPasswordWithPhone = async (req, res) => {
+  try {
+    const { phone, newPassword, confirmPassword } = req.body;
+
+    if (!phone || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    const cleanedPhone = phone.startsWith('+216') ? phone.substring(4) : phone;
+    const user = await User.findOne({ phone: cleanedPhone }).select('+password');
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Hash and save new password, skip required field validation
     user.password = bcrypt.hashSync(newPassword, 8);
-    await user.save();
+    await user.save({ validateBeforeSave: false });
+
+    console.log('🔑 New hashed password saved:', user.password);
 
     return res.status(200).json({ message: 'Password reset successful' });
-
   } catch (error) {
-    console.error('❌ Error in verifyOtpAndResetPassword:', error);
+    console.error('❌ Error in resetPasswordWithPhone:', error);
     return res.status(500).json({ message: 'Error resetting password' });
   }
 };
 
-exports.sendOtp = async (req, res) => {
+exports.sendOtp = async (req, res) => { 
   try {
     const { phone } = req.body;
     
