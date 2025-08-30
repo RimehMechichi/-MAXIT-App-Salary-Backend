@@ -15,20 +15,65 @@ const Role = db.role;
 
 // Generate reset token function
 const generateResetToken = function () {
-  const resetToken = jwt.sign({ data: 'resetToken' }, 'projetPI-secret-key', { expiresIn: '1h' });
+  const resetToken = jwt.sign({ data: 'resetToken' }, config.secret, { expiresIn: '1h' });
   return resetToken;
 }
-// Initialize the Twilio client using environment variables
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID, 
-  process.env.TWILIO_AUTH_TOKEN
-);
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
+// Initialize the Twilio client using environment variables
+let client;
+let twilioPhoneNumber;
+let twilioConfigured = false;
+
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  try {
+    client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    twilioConfigured = true;
+    console.log('✅ Twilio client configured successfully');
+  } catch (error) {
+    console.error('❌ Error creating Twilio client:', error.message);
+    twilioConfigured = false;
+  }
+} else {
+  console.warn('⚠️ Twilio credentials not found. OTP functionality will use demo mode.');
+}
+
+// In-memory storage for OTPs (use Redis in production)
+const otpStore = new Map();
 
 // Generate a 6-digit numeric OTP
 const generateNumericOtp = function () {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Store OTP with expiration (5 minutes)
+const storeOtp = function(phone, otp) {
+  otpStore.set(phone, {
+    otp,
+    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+  });
+  console.log(`🔢 OTP for ${phone}: ${otp} (valid for 5 minutes)`);
+}
+
+// Verify OTP
+const verifyOtp = function(phone, otp) {
+  const storedData = otpStore.get(phone);
+  
+  if (!storedData) {
+    return { success: false, message: 'OTP not found or expired' };
+  }
+
+  if (Date.now() > storedData.expiresAt) {
+    otpStore.delete(phone);
+    return { success: false, message: 'OTP expired' };
+  }
+
+  if (storedData.otp === otp) {
+    otpStore.delete(phone);
+    return { success: true, message: 'OTP verified successfully' };
+  } else {
+    return { success: false, message: 'Invalid OTP' };
+  }
 }
 
 exports.signup = async (req, res) => {
@@ -75,7 +120,7 @@ exports.signup = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('❌ Signup error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -123,7 +168,7 @@ exports.signin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error signing in:', error);
+    console.error('❌ Error signing in:', error);
     res.status(500).json({ message: 'Error signing in' });
   }
 };
@@ -158,21 +203,21 @@ exports.forgotPassword = async (req, res) => {
     
     await user.save({ validateModifiedOnly: true });
 
-    const resetPasswordLink = `${process.env.FRONTEND_URL || 'http://192.168.0.97:8080'}/api/reset-password?token=${resetToken}`;
+    const resetPasswordLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport(emailConfig);
     const mailOptions = forgotPasswordEmailOptions(email, resetPasswordLink);
 
     await transporter.sendMail(mailOptions);
     
-    console.log('Password reset email sent to:', email);
+    console.log('✅ Password reset email sent to:', email);
     return res.status(200).json({ 
       message: 'If an account with that email exists, a reset link has been sent',
       token: resetToken 
     });
 
   } catch (error) {
-    console.error('Error in forgotPassword:', error);
+    console.error('❌ Error in forgotPassword:', error);
     return res.status(500).json({ message: 'Error processing password reset request' });
   }
 };
@@ -180,15 +225,15 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { token, newPassword, confirmPassword } = req.body;
-    console.log('Received token:', token);
+    console.log('🔑 Received token:', token);
 
     if (!token || !newPassword || !confirmPassword) {
-      console.log('Validation failed: Missing fields.');
+      console.log('❌ Validation failed: Missing fields.');
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     if (newPassword !== confirmPassword) {
-      console.log('Validation failed: Passwords do not match.');
+      console.log('❌ Validation failed: Passwords do not match.');
       return res.status(400).json({ message: 'Passwords do not match' });
     }
 
@@ -197,10 +242,10 @@ exports.resetPassword = async (req, res) => {
       resetPasswordExpires: { $gt: Date.now() }
     });
 
-    console.log('Database query result:', user);
+    console.log('📊 Database query result:', user);
 
     if (!user) {
-      console.log('Validation failed: Invalid or expired reset token.');
+      console.log('❌ Validation failed: Invalid or expired reset token.');
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
@@ -215,55 +260,177 @@ exports.resetPassword = async (req, res) => {
     return res.status(200).json({ message: 'Password reset successful' });
 
   } catch (error) {
-    console.error('Error in resetPassword:', error);
+    console.error('❌ Error in resetPassword:', error);
     return res.status(500).json({ message: 'Error resetting password' });
   }
 };
 
 exports.forgotPasswordWithPhone = async (req, res) => {
-    const { phone } = req.body;
+  const { phone } = req.body;
+  console.log('📞 Received forgot password request for phone:', phone);
 
-    try {
-        const user = await User.findOne({ phone: phone });
+  try {
+    let cleanedPhone = phone;
+    if (phone.startsWith('+216')) {
+      cleanedPhone = phone.substring(4);
+    }
 
-        if (!user) {
-            return res.status(200).json({ 
-                message: 'If an account with that phone number exists, a reset code has been sent.'
-            });
+    console.log('📱 Cleaned phone:', cleanedPhone);
+    
+    const user = await User.findOne({ phone: cleanedPhone });
+    console.log('👤 User found:', user ? 'Yes' : 'No');
+
+    if (!user) {
+      console.log('❌ No user found with phone:', cleanedPhone);
+      return res.status(200).json({ 
+        message: 'If an account with that phone number exists, a reset code has been sent.'
+      });
+    }
+    
+    const otp = generateNumericOtp();
+    console.log('🔢 Generated OTP:', otp);
+    
+    storeOtp(cleanedPhone, otp);
+    
+    if (twilioConfigured && client) {
+      console.log('✅ Twilio client is configured, attempting to send SMS...');
+      try {
+        const message = await client.messages.create({
+          body: `Your OTP code is: ${otp}. Valid for 5 minutes.`,
+          from: twilioPhoneNumber,
+          to: phone 
+        });
+        console.log(`✅ OTP sent via Twilio to ${phone}: ${message.sid}`);
+        return res.status(200).json({
+          message: 'If an account with that phone number exists, a reset code has been sent.'
+        });
+      } catch (twilioError) {
+        console.error('❌ Twilio error details:', twilioError);
+        console.error('❌ Twilio error code:', twilioError.code);
+        console.error('❌ Twilio error message:', twilioError.message);
+        
+        if (twilioError.code === 21608 || twilioError.code === 21408) {
+          console.log('💡 Trial account restriction: You can only send messages to verified numbers');
+          console.log('💡 Add your phone number to verified numbers in Twilio console');
         }
         
-        const resetCode = generateNumericOtp();
-        user.resetToken = resetCode;
-        user.resetTokenExpiration = Date.now() + 3600000; // 1 hour
-        await user.save({ modifiedOnly: true });
-
-        // Attempt to send the SMS
-        try {
-            await client.messages.create({
-                body: `Your password reset code is: ${resetCode}`,
-                to: phone,
-                from: twilioPhoneNumber,
-            });
-
-            console.log(`[SMS Service] SMS sent successfully to ${phone}`);
-            
-            // Send a success response. Do not include the OTP in the response body.
-            return res.status(200).json({
-                message: 'If an account with that phone number exists, a reset code has been sent.'
-            });
-
-        } catch (apiError) {
-            // Log the specific Twilio API error and send a 500 response
-            console.error(`[SMS Service] Failed to send SMS via Twilio:`, apiError.message);
-            console.error(`[Twilio Error Code]`, apiError.code);
-            return res.status(500).json({
-                message: 'Error sending SMS. Please try again later.'
-            });
-        }
-
-    } catch (dbError) {
-        console.error('Database error in forgotPasswordWithPhone:', dbError);
-        return res.status(500).json({ message: 'Internal Server Error' });
+      }
+    } else {
+      console.log('⚠️ Twilio client not configured, using demo mode');
     }
+
+    console.log(`🛠️ DEMO MODE: OTP for ${phone} is: ${otp}`);
+    return res.status(200).json({ 
+      message: 'If an account with that phone number exists, a reset code has been sent.',
+      demoMode: true,
+      demoOtp: otp, 
+      note: 'Check server console for the OTP code as Twilio is not properly configured'
+    });
+
+  } catch (dbError) {
+    console.error('❌ Database error in forgotPasswordWithPhone:', dbError);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
 };
 
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    
+    if (!phone || !otp) {
+      return res.status(400).json({ error: 'Phone and OTP are required' });
+    }
+
+    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    
+    const result = verifyOtp(formattedPhone, otp);
+    
+    if (result.success) {
+      return res.json({ success: true, message: 'OTP verified successfully' });
+    } else {
+      return res.status(400).json({ error: result.message });
+    }
+
+  } catch (error) {
+    console.error('❌ Error verifying OTP:', error);
+    res.status(500).json({ error: 'Failed to verify OTP' });
+  }
+};
+
+exports.verifyOtpAndResetPassword = async (req, res) => {
+  try {
+    const { phone, otp, newPassword, confirmPassword } = req.body;
+    
+    if (!phone || !otp || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    
+    const otpResult = verifyOtp(formattedPhone, otp);
+    
+    if (!otpResult.success) {
+      return res.status(400).json({ message: otpResult.message });
+    }
+
+    const user = await User.findOne({ phone: formattedPhone });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.password = bcrypt.hashSync(newPassword, 8);
+    await user.save();
+
+    return res.status(200).json({ message: 'Password reset successful' });
+
+  } catch (error) {
+    console.error('❌ Error in verifyOtpAndResetPassword:', error);
+    return res.status(500).json({ message: 'Error resetting password' });
+  }
+};
+
+exports.sendOtp = async (req, res) => {
+  try {
+    const { phone } = req.body;
+    
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required' });
+    }
+
+    const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+    
+    const otp = generateNumericOtp();
+    
+    storeOtp(formattedPhone, otp);
+    
+    if (twilioConfigured && client) {
+      try {
+        const message = await client.messages.create({
+          body: `Your OTP code is: ${otp}. Valid for 5 minutes.`,
+          from: twilioPhoneNumber,
+          to: formattedPhone
+        });
+        console.log(`✅ OTP sent via Twilio to ${formattedPhone}: ${message.sid}`);
+        return res.json({ success: true, message: 'OTP sent successfully' });
+      } catch (twilioError) {
+        console.error('❌ Twilio error:', twilioError);
+      }
+    }
+
+    console.log(`🛠️ DEMO MODE: OTP for ${formattedPhone} is: ${otp}`);
+    res.json({ 
+      success: true, 
+      message: 'OTP generated (demo mode)', 
+      demoOtp: otp,
+      demoMode: true 
+    });
+
+  } catch (error) {
+    console.error('❌ Error sending OTP:', error);
+    res.status(500).json({ error: 'Failed to send OTP' });
+  }
+};
