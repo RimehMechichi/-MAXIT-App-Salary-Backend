@@ -366,7 +366,7 @@ class UserController {
       { new: true }
     ).select('-password');
 
-    const fullImageUrl = `${req.protocol}://${req.get('host')}/images/auth/${req.file.filename}`;
+    const fullImageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
 
     return res.status(200).json({
       success: true,
