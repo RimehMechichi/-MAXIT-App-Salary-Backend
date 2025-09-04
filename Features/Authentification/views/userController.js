@@ -191,7 +191,7 @@ class UserController {
             }
 
             const updatedUser = req.body;
-            updatedUser.roles = [userRole._id]; // Use the ObjectId of the user role
+            updatedUser.roles = [userRole._id]; 
             const utilisateur = await User.findByIdAndUpdate(id, updatedUser, { new: true });
 
             if (utilisateur) {
@@ -232,7 +232,7 @@ class UserController {
             email: user.email,
             statusUser: user.statusUser,
             statusCompte: user.statusCompte,
-            soldeRestant: user.soldeRestant , // Ensure it has a default value
+            soldeRestant: user.soldeRestant ,
             };
 
             res.json(userProfile);
@@ -247,26 +247,27 @@ class UserController {
 
 
     // userController.js
-static async updateUserProfile(req, res) {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
+    static async updateUserProfile(req, res) {
+    try {
+        const { id } = req.params;
+        const updateData = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
+        const updatedUser = await User.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+        );
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+        if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
     }
 
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-}
     static async getAllUsersWithRoleUser(req, res) {
         try {
             const token = req.headers.authorization.split('Bearer ')[1];
@@ -352,39 +353,20 @@ static async updateUserProfile(req, res) {
   static async uploadProfilePicture(req, res) {
   try {
     const { userId } = req.params;
-    console.log(`Updating profile picture for user: ${userId}`);
 
     if (!req.file) {
-      console.log('No file uploaded');
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Verify the user exists using lean()
-    const user = await User.findById(userId).lean();
-    if (!user) {
-      console.log(`User not found: ${userId}`);
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const picturePath = `/images/${req.file.filename}`;q
-    console.log(`New picture path: ${picturePath}`);
+    const picturePath = `/images/${req.file.filename}`;
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { picture: picturePath },
-      { 
-        new: true,
-        runValidators: true // Ensure schema validation
-      }
-    ).select('-password'); // Exclude sensitive fields
+      { new: true }
+    ).select('-password');
 
-    if (!updatedUser) {
-      console.log('Update operation failed');
-      return res.status(500).json({ message: 'Failed to update profile picture' });
-    }
-
-    const fullImageUrl = `${req.protocol}://${req.get('host')}${picturePath}`;
-    console.log('Profile picture updated successfully');
+    const fullImageUrl = `${req.protocol}://${req.get('host')}/images/auth/${req.file.filename}`;
 
     return res.status(200).json({
       success: true,
@@ -393,14 +375,10 @@ static async updateUserProfile(req, res) {
     });
 
   } catch (error) {
-    console.error('Error in uploadProfilePicture:', error);
-    return res.status(500).json({ 
-      success: false,
-      message: 'Server error during profile picture update',
-      error: error.message
-    });
+    return res.status(500).json({ message: error.message });
   }
 }
+
 }
 
 module.exports = UserController;
