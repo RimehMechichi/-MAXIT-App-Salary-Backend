@@ -11,14 +11,21 @@ exports.create = async (req, res) => {
             return res.status(400).json({ message: 'Invalid date format provided.' });
         }
 
+        // ✅ Use req.body.userId from frontend
         const user = await User.findById(req.body.userId);
         if (!user) {
             return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
 
         const conge = new Conge({
-            ...req.body,
-            statut: 'En attente', 
+            dateDebut: req.body.dateDebut,
+            dateFin: req.body.dateFin,
+            type: req.body.type,
+            commentaire: req.body.commentaire,
+            certificat: req.body.certificat,
+            motif: req.body.motif,
+            statut: 'En attente',
+            user: req.body.userId  // ✅ Correct field name
         });
 
         await conge.save();
@@ -29,7 +36,6 @@ exports.create = async (req, res) => {
         res.status(500).json({ message: 'Erreur lors de la création du congé', error });
     }
 };
-
 
 exports.getAll = async (req, res) => {
   try {

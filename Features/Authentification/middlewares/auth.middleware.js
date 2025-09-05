@@ -1,4 +1,8 @@
 exports.isAdmin = (req, res, next) => {
+<<<<<<< HEAD
+=======
+  // Vérifier si l'utilisateur est authentifié et a le rôle d'administrateur
+>>>>>>> 1b2db6a30bd9d1321fa23f726f22d9cd029f0f08
   if (req.user && req.user.role === 'admin' ||'user') {
     next();
   } else {

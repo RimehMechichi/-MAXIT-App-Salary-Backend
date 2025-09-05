@@ -12,6 +12,7 @@ const congeSchema = new mongoose.Schema({
   },
   certificat: { type: String },
   commentaire: { type: String },
+  motif: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Conge', congeSchema);
