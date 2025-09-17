@@ -162,35 +162,40 @@ exports.signup = async (req, res) => {
 exports.signin = async (req, res) => {
   try {
     let user;
+
+    // 🔹 Find user by username if provided
     if (req.body.username) {
-      user = await User.findOne({ username: req.body.username })
-        .populate('roles', '-__v');
+      user = await User.findOne({ username: req.body.username }).populate('roles', '-__v');
     }
 
+    // 🔹 Otherwise, find user by email if provided
     if (!user && req.body.email) {
-      user = await User.findOne({ email: req.body.email })
-        .populate('roles', '-__v');
+      user = await User.findOne({ email: req.body.email }).populate('roles', '-__v');
     }
 
+    // 🔹 If no user found
     if (!user) {
       return res.status(404).send({ message: 'User not found.' });
     }
 
+    // 🔹 Validate password
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
 
     if (!passwordIsValid) {
       return res.status(401).send({ message: 'Invalid password.' });
     }
 
+    // 🔹 Generate JWT token
     const token = jwt.sign({ id: user.id }, config.secret, {
-      expiresIn: 86400 
+      expiresIn: 86400, // 24h
     });
 
+    // 🔹 Build roles list
     const authorities = user.roles.map(role => `ROLE_${role.name.toUpperCase()}`);
 
-    req.session.token = token;
-
-    res.status(200).send({
+    // 🔹 Send success response
+    res.status(200).json({
+      success: true,
       id: user._id,
       username: user.username,
       name: user.lastName,
@@ -198,7 +203,7 @@ exports.signin = async (req, res) => {
       email: user.email,
       roles: authorities,
       accessToken: token,
-      soldeRestant: user.soldeRestant, 
+      soldeRestant: user.soldeRestant,
     });
 
   } catch (error) {
@@ -206,6 +211,7 @@ exports.signin = async (req, res) => {
     res.status(500).json({ message: 'Error signing in' });
   }
 };
+
 
 exports.signout = async (req, res) => {
   try {
