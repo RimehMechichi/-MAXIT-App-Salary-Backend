@@ -1,10 +1,11 @@
-  const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-    const likesSchema = new mongoose.Schema({
+const likeSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  acceuilItemId: { type: String, required: true },
+  acceuilItemType: { type: String, required: true }, // 'avantageSociaux' or 'ecologique'
+  isLiked: { type: Boolean, default: true },
+  likedAt: { type: Date, default: Date.now }
+}, { timestamps: true });
 
-    like: { type: String, required: true }, 
-    dislike: { type: String, required: true },
-   
-  }, { timestamps: true });
-  
-  module.exports = mongoose.model('likes', likesSchema);
+module.exports = mongoose.model('Like', likeSchema);

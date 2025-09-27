@@ -1,64 +1,96 @@
-const service = require('../viewModels/commentServices.js');
+const commentService = require('../viewModels/commentServices.js');
 
-exports.create = async (req, res) => {
+// Add comment to a post
+exports.addComment = async (req, res) => {
   try {
-    const { titre_eventEco, description_eventEco, date_eventEco } = req.body;
+    const { userId, userName, userAvatar, text, acceuilItemType } = req.body;
+    const acceuilItemId = req.params.id;
 
-    // ✅ Chemin URL relatif :
-    const imagePath = req.file ? `/images/${req.file.filename}` : null;
-
-    if (!titre_eventEco || !description_eventEco || !date_eventEco || !imagePath) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!userId || !userName || !text || !acceuilItemType) {
+      return res.status(400).json({ message: 'User ID, user name, text, and item type are required' });
     }
 
-    const newEvent = await service.createcomments({
-      titre_eventEco,
-      description_eventEco,
-      date_eventEco,
-      image_eventEco: imagePath,
+    const newComment = await commentService.createComment({
+      userId,
+      userName,
+      userAvatar: userAvatar || '',
+      acceuilItemId,
+      acceuilItemType,
+      text,
+      createdAt: new Date()
     });
 
-    res.status(201).json(newEvent);
+    res.status(201).json(newComment);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.getAll = async (req, res) => {
+// Get comments for an item
+exports.getCommentsForItem = async (req, res) => {
   try {
-    const comments = await service.getAllcomments();
+    const { acceuilItemType } = req.query;
+    const acceuilItemId = req.params.id;
+
+    if (!acceuilItemType) {
+      return res.status(400).json({ message: 'Item type is required' });
+    }
+
+    const comments = await commentService.getCommentsByItem(acceuilItemId, acceuilItemType);
     res.json(comments);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-exports.getById = async (req, res) => {
+exports.updateComment = async (req, res) => {
   try {
-    const comment = await service.getcommentById(req.params.id);
-    if (!comment) return res.status(404).json({ message: 'comment not found' });
-    res.json(comment);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { text } = req.body;
+    const commentId = req.params.id;
+
+    if (!text) return res.status(400).json({ message: 'Text is required' });
+
+    const updatedComment = await commentService.updateComment(commentId, { text });
+
+    if (!updatedComment) return res.status(404).json({ message: 'Comment not found' });
+
+    res.json(updatedComment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-exports.update = async (req, res) => {
+
+// Delete comment
+exports.deleteComment = async (req, res) => {
   try {
-    const updated = await service.updatecomments(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: 'comments not found' });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const commentId = req.params.id;
+
+    const deletedComment = await commentService.deleteComment(commentId);
+
+    if (!deletedComment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-exports.delete = async (req, res) => {
+// Get comment count for an item
+exports.getCommentCount = async (req, res) => {
   try {
-    const deleted = await service.deletecomments(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'comments not found' });
-    res.json({ message: 'comments deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { acceuilItemType } = req.query;
+    const acceuilItemId = req.params.id;
+
+    if (!acceuilItemType) {
+      return res.status(400).json({ message: 'Item type is required' });
+    }
+
+    const count = await commentService.getCommentCount(acceuilItemId, acceuilItemType);
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

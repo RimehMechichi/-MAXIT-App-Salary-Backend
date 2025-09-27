@@ -1,64 +1,90 @@
-const service = require('../viewModels/likeServices.js');
+const likeService  = require('../viewModels/likeServices.js');
 
-exports.create = async (req, res) => {
+// Like a post
+exports.likePost = async (req, res) => {
   try {
-    const { titre_eventEco, description_eventEco, date_eventEco } = req.body;
+    const { userId, acceuilItemType } = req.body;
+    const acceuilItemId = req.params.id;
 
-    // ✅ Chemin URL relatif :
-    const imagePath = req.file ? `/images/${req.file.filename}` : null;
-
-    if (!titre_eventEco || !description_eventEco || !date_eventEco || !imagePath) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!userId || !acceuilItemType) {
+      return res.status(400).json({ message: 'User ID and item type are required' });
     }
 
-    const newEvent = await service.createlikes({
-      titre_eventEco,
-      description_eventEco,
-      date_eventEco,
-      image_eventEco: imagePath,
+    // Check if user already liked this item
+    const existingLike = await likeService.checkUserLike(userId, acceuilItemId, acceuilItemType);
+
+    if (existingLike) {
+      return res.status(400).json({ message: 'Already liked' });
+    }
+
+    // Create new like
+    const newLike = await likeService.createLike({
+      userId,
+      acceuilItemId,
+      acceuilItemType,
+      isLiked: true,
+      likedAt: new Date()
     });
 
-    res.status(201).json(newEvent);
+    res.status(201).json(newLike);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-exports.getAll = async (req, res) => {
+// Dislike a post (remove like)
+exports.dislikePost = async (req, res) => {
   try {
-    const likes = await service.getAlllikes();
+    const { userId, acceuilItemType } = req.body;
+    const acceuilItemId = req.params.id;
+
+    if (!userId || !acceuilItemType) {
+      return res.status(400).json({ message: 'User ID and item type are required' });
+    }
+
+    // Remove the like
+    const result = await likeService.deleteLikeByUserAndItem(userId, acceuilItemId, acceuilItemType);
+
+    if (!result) {
+      return res.status(404).json({ message: 'Like not found' });
+    }
+
+    res.json({ message: 'Disliked successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get likes for an item
+exports.getLikesForItem = async (req, res) => {
+  try {
+    const { acceuilItemType } = req.query;
+    const acceuilItemId = req.params.id;
+
+    if (!acceuilItemType) {
+      return res.status(400).json({ message: 'Item type is required' });
+    }
+
+    const likes = await likeService.getLikesByItem(acceuilItemId, acceuilItemType);
     res.json(likes);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-exports.getById = async (req, res) => {
+// Get like count for an item
+exports.getLikeCount = async (req, res) => {
   try {
-    const like = await service.getlikeById(req.params.id);
-    if (!like) return res.status(404).json({ message: 'like not found' });
-    res.json(like);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+    const { acceuilItemType } = req.query;
+    const acceuilItemId = req.params.id;
 
-exports.update = async (req, res) => {
-  try {
-    const updated = await service.updatelikes(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: 'likes not found' });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+    if (!acceuilItemType) {
+      return res.status(400).json({ message: 'Item type is required' });
+    }
 
-exports.delete = async (req, res) => {
-  try {
-    const deleted = await service.deletelikes(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'likes not found' });
-    res.json({ message: 'likes deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const count = await likeService.getLikeCount(acceuilItemId, acceuilItemType);
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

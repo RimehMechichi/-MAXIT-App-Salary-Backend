@@ -1,36 +1,47 @@
-const comment = require('../models/commentsModels');
+const Comment = require('../models/commentsModels');
 
-// Create
-async function createcomments(data) {
-  return await comment.create(data);
+// Create comment
+async function createComment(data) {
+  return await Comment.create(data);
 }
 
-// Read All
-async function getAllcomments() {
-  return await comment.find();
+// Get all comments
+async function getAllComments() {
+  return await Comment.find();
 }
 
-// Read One
-async function getcommentById(_id) {
-  return await comment.findOne({ _id });
+// Get comment by ID
+async function getCommentById(_id) {
+  return await Comment.findOne({ _id });
 }
 
-// Update
-async function updatecomments(_id, data) {
-  return await comment.findOneAndUpdate({ _id }, data, { new: true });
+// Get comments by item
+async function getCommentsByItem(acceuilItemId, acceuilItemType) {
+  return await Comment.find({ acceuilItemId, acceuilItemType }).sort({ createdAt: -1 });
 }
 
-// Delete
-async function deletecomments(_id) {
-  return await comment.findOneAndDelete({ _id});
+// Update comment
+async function updateComment(commentId, data) {
+  return await Comment.findByIdAndUpdate(commentId, data, { new: true });
+}
+
+
+// Delete comment
+async function deleteComment(_id) {
+  return await Comment.findOneAndDelete({ _id });
+}
+
+// Get comment count for item
+async function getCommentCount(acceuilItemId, acceuilItemType) {
+  return await Comment.countDocuments({ acceuilItemId, acceuilItemType });
 }
 
 module.exports = {
-  createcomments,
-  getAllcomments,
-  getcommentById,
-  updatecomments,
-  deletecomments,
+  createComment,
+  getAllComments,
+  getCommentById,
+  getCommentsByItem,
+  updateComment,
+  deleteComment,
+  getCommentCount
 };
-
-

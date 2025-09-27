@@ -1,13 +1,11 @@
-  const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-    const commentsSchema = new mongoose.Schema({
+const commentSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  acceuilItemId: { type: String, required: true },
+  acceuilItemType: { type: String, required: true }, // 'avantageSociaux' or 'ecologique'
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+}, { timestamps: true });
 
-    titre_cmnt: { type: String, required: true }, 
-    description_cmnt: { type: String, required: true },
-    date_cmnt: { type: Date , required: true },
-    image_cmnt: { type: String, required: true },
-    nombres_cmnt: { type: Number, required: true },
-   
-  }, { timestamps: true });
-  
-  module.exports = mongoose.model('comments', commentsSchema);
+module.exports = mongoose.model('Comment', commentSchema);

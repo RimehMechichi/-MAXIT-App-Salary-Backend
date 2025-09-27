@@ -84,6 +84,7 @@ const userSchema = new mongoose.Schema({
   congeRestant: {
     type: Number,
     required: true,
+    default: 1,
   },
   picture: { 
     type: String,

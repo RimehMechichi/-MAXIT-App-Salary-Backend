@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const service = require('../viewModels/congeService.js');
 const User = require('/Users/Asus/Desktop/StagePFE/appsalary-backend/Features/Authentification/models/user.model.js');
 const Conge = require('../models/congeModel');
@@ -25,12 +26,26 @@ exports.create = async (req, res) => {
             certificat: req.body.certificat,
             motif: req.body.motif,
             statut: 'En attente',
-            user: req.body.userId  // ✅ Correct field name
+            userId: req.body.userId  // ✅ Consistent field name
         });
 
         await conge.save();
 
-        res.status(201).json({ message: 'Demande de congé enregistrée', conge });
+        res.status(201).json({ 
+            message: 'Demande de congé enregistrée', 
+            conge: {
+                idConge: conge._id,
+                userId: conge.userId,
+                type: conge.type,
+                dateDebut: conge.dateDebut,
+                dateFin: conge.dateFin,
+                statut: conge.statut,
+                commentaire: conge.commentaire,
+                certificat: conge.certificat,
+                motif: conge.motif,
+                soldeRestant: user.soldeRestant
+            }
+        });
     } catch (error) {
         console.error('Create conge error:', error);
         res.status(500).json({ message: 'Erreur lors de la création du congé', error });
@@ -58,10 +73,21 @@ exports.getById = async (req, res) => {
 
 exports.getByUser = async (req, res) => {
   try {
-    const conges = await service.getCongesByUser(req.params.userId);
+    const { userId } = req.params;
+
+    console.log(`Fetching congés for user ID: ${userId}`);
+
+    // cast to ObjectId
+    const objectId = new mongoose.Types.ObjectId(userId);
+
+    const conges = await Conge.find({ userId: objectId });
+
+    console.log('Direct query result:', conges);
+
     res.json(conges);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error('Error fetching congés:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -88,7 +114,7 @@ exports.update = async (req, res) => {
                 (new Date(conge.dateFin) - new Date(conge.dateDebut)) / (1000 * 60 * 60 * 24)
             ) + 1;
 
-            const user = await User.findById(conge.userId);
+            const user = await User.findById(conge.userId); // ✅ Fixed: use conge.userId
             if (!user) {
                 return res.status(404).json({ message: 'Utilisateur non trouvé' });
             }
@@ -106,7 +132,21 @@ exports.update = async (req, res) => {
         conge.statut = statut;
         await conge.save();
 
-        res.status(200).json({ message: 'Statut mis à jour', conge });
+        res.status(200).json({ 
+            message: 'Statut mis à jour', 
+            conge: {
+                idConge: conge._id,
+                userId: conge.userId,
+                type: conge.type,
+                dateDebut: conge.dateDebut,
+                dateFin: conge.dateFin,
+                statut: conge.statut,
+                commentaire: conge.commentaire,
+                certificat: conge.certificat,
+                motif: conge.motif,
+                soldeRestant: conge.soldeRestant
+            }
+        });
     } catch (error) {
         console.error('Update statut error:', error);
         res.status(500).json({ message: 'Erreur lors de la mise à jour', error });

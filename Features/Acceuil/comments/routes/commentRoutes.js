@@ -4,11 +4,10 @@ const commentController = require('../views/commentControllers.js');
 const { uploadSingleImage } = require('../middlewares/multer-config.js');
 
 
-router.post('/comment', uploadSingleImage, commentController.create);
-router.get('/comments', commentController.getAll);
-router.get('/comment/:id', commentController.getById);
-router.put('/comment/:id', commentController.update);
-router.delete('/comment/:id', commentController.delete);
-
+router.post('/comment/:id', commentController.addComment);
+router.get('/comments/:id', commentController.getCommentsForItem);
+router.put('/comment/:id', commentController.updateComment);
+router.delete('/comment/:id', commentController.deleteComment);
+router.get('/comment-count/:id', commentController.getCommentCount);
 
 module.exports = router;

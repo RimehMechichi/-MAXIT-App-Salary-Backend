@@ -4,8 +4,8 @@ const congeSchema = new mongoose.Schema({
   dateDebut: { type: Date, required: true },
   dateFin: { type: Date, required: true },
   type: { type: String },
-  statut: { type: String },
-  user: {
+  statut: { type: String, enum: ['En attente', 'Approuvé', 'Refusé'], default: 'En attente' },
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true

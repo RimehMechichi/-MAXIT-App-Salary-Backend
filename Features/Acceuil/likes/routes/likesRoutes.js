@@ -3,11 +3,17 @@ const router = express.Router();
 const likeController = require('../views/likeControllers.js');
 
 
-router.post('/like', ulikeController.create);
-router.get('/likes', likeController.getAll);
-router.get('/like/:id', likeController.getById);
-router.put('/like/:id', likeController.update);
-router.delete('/like/:id', likeController.delete);
+// Like a post
+router.post('/like/:id', likeController.likePost);
+
+// Dislike a post (remove like)
+router.delete('/dislike/:id', likeController.dislikePost);
+
+// Get likes for an item
+router.get('/likes/:id', likeController.getLikesForItem);
+
+// Get like count for an item
+router.get('/like-count/:id', likeController.getLikeCount);
 
 
 module.exports = router;

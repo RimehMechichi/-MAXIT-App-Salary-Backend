@@ -17,7 +17,10 @@ const ideaBoxRoutes  = require ('./Features/BoxDidees/routes/ideaBoxRoutes.js');
 const partenariatRoutes  = require ('./Features/Partenariats/routes/partenariatRoutes.js');
 const eventCalendarRoutes  = require ('./Features/Event_Clalendar/routes/eventCalendarRoutes.js');
 const reviewRoutes  = require ('./Features/Reviews/routes/reviewRoutes.js');
-const commentRoutes = require ('./Features/Acceuil/comments/routes/commentRoutes.js')
+const commentRoutes = require ('./Features/Acceuil/comments/routes/commentRoutes.js');
+const likesRoutes = require ('./Features/Acceuil/likes/routes/likesRoutes.js')
+const avantageSociauxRoutes = require ('./Features/AvantageSociaux/routes/avantageSociauxRoutes.js')
+
 require('dotenv').config();
 require('./Features/Conge/cron/monthlySoldeUpdater.js'); 
 
@@ -26,7 +29,7 @@ const PORT = process.env.PORT || 8080;
 const path = require('path');
 
 app.use('/images', express.static(path.join(__dirname, 'Features/Ecologiques/Public/images')));
-app.use('/images', express.static(path.join(__dirname, 'Features/Authentification/Public/images')));
+app.use('/images', express.static(path.join(__dirname, 'Features/Acceuil/Public/images')));
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -54,6 +57,7 @@ async function migrateUserSoldeRestant() {
   }
 }
 
+// Use routes
 app.use('/', congeRoutes);
 app.use('/', annuaireRoutes);
 app.use('/', conventionRoutes);
@@ -64,7 +68,9 @@ app.use('/', ideaBoxRoutes);
 app.use('/', partenariatRoutes);
 app.use('/', eventCalendarRoutes);
 app.use('/', reviewRoutes);
+app.use('/acceuil', likesRoutes);
 app.use('/acceuil', commentRoutes);
+app.use('/', avantageSociauxRoutes);
 
 
 const db = require("./Features/Authentification/models/index.js");

@@ -38,5 +38,8 @@
     "telesignsdk": "^3.0.4",
     "twilio": "^5.8.2",
     "uuid": "^11.1.0"
-  }
+  },
+  "devDependencies": {},
+  "author": "",
+  "license": "ISC"
 }

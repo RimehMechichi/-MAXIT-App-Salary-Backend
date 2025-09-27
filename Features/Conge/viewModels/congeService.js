@@ -1,5 +1,5 @@
 const Conge = require('../models/congeModel');
-const User = require('/Users/Asus/Desktop/StagePFE/appsalary-backend/Features/Authentification/models/user.model.js');
+//const User = require('/Users/Asus/Desktop/StagePFE/appsalary-backend/Features/Authentification/models/user.model.js');
 
 // Create
 async function createConge(data) {
@@ -13,7 +13,7 @@ async function getAllConges() {
 
 // Read One
 async function getCongeById(_id) {
-  return await Conge.findOne({ idConge });
+  return await Conge.findOne({ _id });
 }
 
 // Get By User ID
