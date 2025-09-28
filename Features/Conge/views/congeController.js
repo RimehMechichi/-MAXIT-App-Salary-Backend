@@ -26,7 +26,7 @@ exports.create = async (req, res) => {
             certificat: req.body.certificat,
             motif: req.body.motif,
             statut: 'En attente',
-            userId: req.body.userId  // ✅ Consistent field name
+            userId: req.body.userId 
         });
 
         await conge.save();
