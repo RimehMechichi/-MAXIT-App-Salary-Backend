@@ -268,7 +268,7 @@ class UserController {
     }
     }
 
-    static async getAllUsersWithRoleUser(req, res) {
+    static async getAllUsers(req, res) {
         try {
             const token = req.headers.authorization.split('Bearer ')[1];
             const decodedToken = jwt.verify(token, config.secret);
@@ -278,24 +278,15 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ error: 'Utilisateur introuvable' });
             }
-
-            const hasUserRole = user.roles.some((role) => role.name === 'admin');
-            if (!hasUserRole) {
-                return res.status(401).json({ error: 'Access Denied' });
-            }
-
-            const role = await Role.findOne({ name: 'user' });
-            console.log("role",role.name)
-            if (!role) {
-                return res.status(404).json({ error: 'Le rôle "user" n\'existe pas.' });
-            }
-            const users = await User.find({ roles: role._id }).populate('roles');
+            // Fetch all users without filtering by role
+            const users = await User.find().populate('roles');
             res.json(users);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des utilisateurs.' });
         }
     }
+
 
     static async getAllAdmins(req, res) {
         try {
