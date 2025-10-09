@@ -20,6 +20,8 @@ const reviewRoutes  = require ('./Features/Reviews/routes/reviewRoutes.js');
 const commentRoutes = require ('./Features/Acceuil/comments/routes/commentRoutes.js');
 const likesRoutes = require ('./Features/Acceuil/likes/routes/likesRoutes.js')
 const avantageSociauxRoutes = require ('./Features/AvantageSociaux/routes/avantageSociauxRoutes.js')
+const collectionRoutes = require('./Features/Collections/routes/collectionRoutes');
+const invitationRoutes = require('./Features/Collections/routes/invitationRoutes');
 
 require('dotenv').config();
 require('./Features/Conge/cron/monthlySoldeUpdater.js'); 
@@ -72,7 +74,8 @@ app.use('/', reviewRoutes);
 app.use('/acceuil', likesRoutes);
 app.use('/acceuil', commentRoutes);
 app.use('/', avantageSociauxRoutes);
-
+app.use('/collections', collectionRoutes);
+app.use('/invitations', invitationRoutes);
 
 const db = require("./Features/Authentification/models/index.js");
 
