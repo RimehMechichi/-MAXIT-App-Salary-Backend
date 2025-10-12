@@ -76,7 +76,7 @@ exports.getCollectionById = async (req, res) => {
 
 exports.getCollections = async (req, res) => {
   try {
-    const userId = req.params.userId; // This should come from the route parameter
+    const userId = req.params.userId;
     console.log('🔄 Getting collections for user:', userId);
     
     const collections = await collectionService.getCollectionsByUser(userId);
