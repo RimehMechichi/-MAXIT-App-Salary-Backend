@@ -62,7 +62,6 @@ async function getCollectionById(userId, collectionId) {
 async function getCollectionsByUser(userId) {
   console.log('🔍 Getting collections for user:', userId);
   
-  // Validate userId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new Error('Invalid user ID');
   }
@@ -78,7 +77,6 @@ async function getCollectionsByUser(userId) {
 
   console.log(`📊 Found ${collections.length} total collections for user ${userId}`);
   
-  // Debug: Log each collection's details
   collections.forEach((collection, index) => {
     const isOwner = collection.createdBy.toString() === userId;
     const isMember = collection.members.some(m => 
