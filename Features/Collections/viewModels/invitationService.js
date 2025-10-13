@@ -123,7 +123,7 @@ async function getUserInvitations(email, userId) {
 
 async function respondInvitation(invitationId, accept, userId) {
   console.log('respondInvitation called with:', { invitationId, accept, userId });
-  
+
   const invitation = await CollectionInvitation.findById(invitationId);
   if (!invitation) throw new Error('Invitation not found');
 
@@ -142,57 +142,63 @@ async function respondInvitation(invitationId, accept, userId) {
   invitation.status = accept ? 'accepted' : 'rejected';
   await invitation.save();
 
-  if (accept) {
-    // Add user to collection
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
-
-    const collection = await TodoCollection.findById(invitation.collectionId);
-    if (!collection) throw new Error('Collection not found');
-
-    // Check if user is already a member
-    const isAlreadyMember = collection.members.some(m => 
-      m.userId.toString() === userId.toString()
-    );
-    
-    if (!isAlreadyMember) {
-      collection.members.push({ 
-        userId: user._id, 
-        email: user.email,
-        displayName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-        permission: 'editor',
-        joinedAt: new Date()
-      });
-      
-      await collection.save();
-      console.log('✅ User added to collection:', user.email);
-    } else {
-      console.log('ℹ️ User already a member of collection:', user.email);
-    }
-
-    // Send notification to the inviter
-    if (notificationService && notificationService.sendInvitationResponseNotification) {
-      await notificationService.sendInvitationResponseNotification(
-        invitation.fromUserId,
-        {
-          collectionName: invitation.collectionName,
-          userName: user.firstName || user.email,
-          accepted: true
-        }
-      );
-    }
-
-    // Return the updated collection so the frontend can refresh
-    return {
-      invitation,
-      collection: await TodoCollection.findById(invitation.collectionId).populate('members.userId', 'firstName lastName email')
-    };
+  if (!accept) {
+    return { invitation };
   }
 
-  return { invitation };
+  // ✅ User accepted → update collection membership
+  const user = await User.findById(userId);
+  if (!user) throw new Error('User not found');
+
+  const collection = await TodoCollection.findById(invitation.collectionId);
+  if (!collection) throw new Error('Collection not found');
+
+  // Check if user already exists in members
+  const memberIndex = collection.members.findIndex(
+    (m) => m.userId.toString() === userId.toString()
+  );
+
+  if (memberIndex === -1) {
+    // ✅ Add as new accepted member
+    collection.members.push({
+      userId: user._id,
+      email: user.email,
+      displayName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+      role: 'member',
+      status: 'accepted',
+      joinedAt: new Date(),
+    });
+    console.log('✅ New member added to collection:', user.email);
+  } else {
+    // ✅ Update existing pending member to accepted
+    collection.members[memberIndex].status = 'accepted';
+    if (!collection.members[memberIndex].role)
+      collection.members[memberIndex].role = 'member';
+    console.log('🔄 Updated existing member to accepted:', user.email);
+  }
+
+  await collection.save();
+
+  // ✅ Notify inviter
+  if (notificationService && notificationService.sendInvitationResponseNotification) {
+    await notificationService.sendInvitationResponseNotification(invitation.fromUserId, {
+      collectionName: invitation.collectionName,
+      userName: user.firstName || user.email,
+      accepted: true,
+    });
+  }
+
+  // ✅ Return updated data for frontend refresh
+  return {
+    invitation,
+    collection: await TodoCollection.findById(invitation.collectionId).populate(
+      'members.userId',
+      'firstName lastName email'
+    ),
+  };
 }
 
-// Remove/cancel invitation
+
 async function removeInvitation(invitationId, userId) {
   console.log('removeInvitation called with:', { invitationId, userId });
   
