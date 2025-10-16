@@ -10,6 +10,12 @@ async function getAllannuaires() {
   return await annuaire.find();
 }
 
+// Read All
+async function getAllFromUsers() {
+  return await annuaire.find();
+}
+
+
 // Read One
 async function getannuaireById(_id) {
   return await annuaire.findOne({ _id });
@@ -31,6 +37,7 @@ module.exports = {
   getannuaireById,
   updateannuaires,
   deleteannuaires,
+  getAllFromUsers,
 };
 
 

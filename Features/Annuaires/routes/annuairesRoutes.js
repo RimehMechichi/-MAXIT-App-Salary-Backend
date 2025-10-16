@@ -7,6 +7,7 @@ router.get('/annuaires', annuaireController.getAll);
 router.get('/annuaire/:id', annuaireController.getById);
 router.put('/annuaire/:id', annuaireController.update);
 router.delete('/annuaire/:id', annuaireController.delete);
+router.get('/annuaires/fromUsers', annuaireController.getAllFromUsers);
 
 
 module.exports = router;
