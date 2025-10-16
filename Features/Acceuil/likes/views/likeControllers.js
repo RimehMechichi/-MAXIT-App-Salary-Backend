@@ -29,24 +29,32 @@ exports.likeAcceuilItem = async (req, res) => {
       return res.status(400).json({ message: 'Invalid ID format' });
     }
 
-    const existingInteraction = await service.findInteractionByUserAndItem(
+    // Check if user already has an interaction with this item
+    const existingInteraction = await service.checkUserLike(
       userId, cleanAcceuilId, acceuilItemType
     );
 
     if (existingInteraction) {
       if (existingInteraction.like) {
+        // If already liked, remove the like
         await service.deleteLike(existingInteraction._id);
         return res.json({ message: 'Like removed', liked: false });
       } else {
-        const updated = await service.updatelikes(existingInteraction._id, {
+        // If disliked, update to like
+        await service.deleteLike(existingInteraction._id);
+        const newLike = await service.createLike({
+          acceuilItemId: cleanAcceuilId,
+          acceuilItemType: acceuilItemType,
+          userId: userId,
           like: true,
-          dislike: false
+          dislike: false,
         });
-        return res.json({ message: 'Dislike changed to like', liked: true });
+        return res.json({ message: 'Dislike changed to like', liked: true, like: newLike });
       }
     }
 
-    const newLike = await service.createlike({
+    // Create new like
+    const newLike = await service.createLike({
       acceuilItemId: cleanAcceuilId,
       acceuilItemType: acceuilItemType,
       userId: userId,
@@ -77,31 +85,39 @@ exports.dislikeAcceuilItem = async (req, res) => {
       return res.status(400).json({ message: 'Invalid ID format' });
     }
 
-    const existingInteraction = await service.findInteractionByUserAndItem(
+    // Check if user already has an interaction with this item
+    const existingInteraction = await service.checkUserLike(
       userId, cleanAcceuilId, acceuilItemType
     );
 
     if (existingInteraction) {
       if (existingInteraction.dislike) {
-        await service.deleteDislike(existingInteraction._id);
+        // If already disliked, remove the dislike
+        await service.deleteLike(existingInteraction._id);
         return res.json({ message: 'Dislike removed', disliked: false });
       } else {
-        const updated = await service.updatelikes(existingInteraction._id, {
+        // If liked, update to dislike
+        await service.deleteLike(existingInteraction._id);
+        const newDislike = await service.createLike({
+          acceuilItemId: cleanAcceuilId,
+          acceuilItemType: acceuilItemType,
+          userId: userId,
           like: false,
-          dislike: true
+          dislike: true,
         });
-        return res.json({ message: 'Like changed to dislike', disliked: true });
+        return res.json({ message: 'Like changed to dislike', disliked: true, dislike: newDislike });
       }
     }
-    
-    const newDislike = await service.createdislike({
+
+    // Create new dislike
+    const newDislike = await service.createLike({
       acceuilItemId: cleanAcceuilId,
       acceuilItemType: acceuilItemType,
       userId: userId,
       like: false,
       dislike: true,
     });
-    
+
     res.status(201).json({ message: 'Item disliked', disliked: true, dislike: newDislike });
   } catch (error) {
     console.error('Error in dislikeAcceuilItem:', error);
@@ -112,48 +128,64 @@ exports.dislikeAcceuilItem = async (req, res) => {
 exports.getLikesForAcceuilItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const likes = await service.getLikesForAcceuilItem(id);
-    res.status(200).json(likes);
+    const { acceuilItemType } = req.query;
+    
+    if (!acceuilItemType) {
+      return res.status(400).json({ message: 'Item type is required as query parameter' });
+    }
+    
+    const cleanAcceuilId = getCleanObjectId(id);
+    const likes = await service.getLikesByItem(cleanAcceuilId, acceuilItemType);
+    
+    // Get like and dislike counts
+    const likeCount = likes.filter(like => like.like).length;
+    const dislikeCount = likes.filter(like => like.dislike).length;
+    
+    res.status(200).json({
+      itemId: cleanAcceuilId,
+      itemType: acceuilItemType,
+      likes: likes,
+      likeCount: likeCount,
+      dislikeCount: dislikeCount,
+      totalInteractions: likes.length
+    });
   } catch (error) {
+    console.error('Error in getLikesForAcceuilItem:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.getAll = async (req, res) => {
   try {
-    const likes = await service.getAlllikes();
-    res.json(likes);
+    const likes = await service.getAllLikes();
+    res.json({
+      count: likes.length,
+      likes: likes
+    });
   } catch (err) {
+    console.error('Error in getAll:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
 exports.getById = async (req, res) => {
   try {
-    const like = await service.getlikeById(req.params.id);
-    if (!like) return res.status(404).json({ message: 'like not found' });
+    const like = await service.getLikeById(req.params.id);
+    if (!like) return res.status(404).json({ message: 'Like not found' });
     res.json(like);
   } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-exports.update = async (req, res) => {
-  try {
-    const updated = await service.updatelikes(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ message: 'likes not found' });
-    res.json(updated);
-  } catch (err) {
+    console.error('Error in getById:', err);
     res.status(500).json({ message: err.message });
   }
 };
 
 exports.delete = async (req, res) => {
   try {
-    const deleted = await service.delete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'likes not found' });
-    res.json({ message: 'likes deleted' });
+    const deleted = await service.deleteLike(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'Like not found' });
+    res.json({ message: 'Like deleted successfully', deletedLike: deleted });
   } catch (err) {
+    console.error('Error in delete:', err);
     res.status(500).json({ message: err.message });
   }
 };
