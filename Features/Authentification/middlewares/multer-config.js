@@ -9,21 +9,14 @@ const MIME_TYPES = {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, join(__dirname, '../Public/images')); 
+    cb(null, path.join(__dirname, '../Public/images')); // matches static folder
   },
   filename: (req, file, cb) => {
-    const name = file.originalname.split(' ').join('_');
-    const extension = MIME_TYPES[file.mimetype] || 'jpg';
-    cb(null, name + '_' + Date.now() + '.' + extension);
+    const uniqueName = `${req.params.userId}_${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
   },
 });
 
-// Middleware multer pour un seul fichier avec champ 'image'
-const uploadSingleImage = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // max 10MB
-}).single('picture');
+const uploadSingleImage = multer({ storage }).single('picture');
 
-module.exports = {
-  uploadSingleImage,
-};
+module.exports = { uploadSingleImage };

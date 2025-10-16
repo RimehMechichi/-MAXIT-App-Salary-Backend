@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 8080;
 const path = require('path');
 
 app.use('/images', express.static(path.join(__dirname, 'Features/Ecologiques/Public/images')));
-app.use('/images', express.static(path.join(__dirname, 'Features/Acceuil/Public/images')));
+app.use('/images/auth', express.static(path.join(__dirname, 'Features/Authentification/Public/images')));
 
 app.use(cors());
 app.use(morgan("dev"));

@@ -1,67 +1,51 @@
-const Like = require('../models/likesModels.js'); 
+const Like = require('../models/likesModels');
 
-async function findLikeByUserAndAcceuil(userId, acceuilItemId) {
-  return await Like.findOne({ userId, acceuilItemId, like: true });
+// Create like
+async function createLike(data) {
+  return await Like.create(data);
 }
-
-async function deleteLike(likeId) {
-  return await Like.findByIdAndDelete(likeId);
-}
-
-async function createlike(data) {
-  const like = new Like(data);
-  return await like.save();
-}
-
-async function findDislikeByUserAndAcceuil(userId, acceuilItemId) {
-  return await Like.findOne({ userId, acceuilItemId, dislike: true });
-}
-
-async function deleteDislike(dislikeId) {
-  return await Like.findByIdAndDelete(dislikeId);
-}
-
-// Créer un nouveau dislike
-async function createdislike(data) {
-  const dislike = new Like(data);
-  return await dislike.save();
-}
-
-// Obtenir tous les likes d’un item
-async function getLikesForAcceuilItem(acceuilItemId) {
-  return await Like.find({ acceuilItemId, like: true });
-}
-
-// Obtenir tous les likes/dislikes
-async function getAlllikes() {
+// Get all likes
+async function getAllLikes() {
   return await Like.find();
 }
 
-// Obtenir un like par ID
-async function getlikeById(id) {
-  return await Like.findById(id);
+// Get like by ID
+async function getLikeById(_id) {
+  return await Like.findOne({ _id });
 }
 
-// Mettre à jour un like/dislike
-async function updatelikes(id, data) {
-  return await Like.findByIdAndUpdate(id, data, { new: true });
+// Get likes by item
+async function getLikesByItem(acceuilItemId, acceuilItemType) {
+  return await Like.find({ acceuilItemId, acceuilItemType });
 }
 
-// Supprimer par ID
-async function deleteById(id) {
-  return await Like.findByIdAndDelete(id);
+// Check if user liked item
+async function checkUserLike(userId, acceuilItemId, acceuilItemType) {
+  return await Like.findOne({ userId, acceuilItemId, acceuilItemType });
+}
+
+// Delete like
+async function deleteLike(_id) {
+  return await Like.findOneAndDelete({ _id });
+}
+
+// Delete like by user and item
+async function deleteLikeByUserAndItem(userId, acceuilItemId, acceuilItemType) {
+  return await Like.findOneAndDelete({ userId, acceuilItemId, acceuilItemType });
+}
+
+// Get like count for item
+async function getLikeCount(acceuilItemId, acceuilItemType) {
+  return await Like.countDocuments({ acceuilItemId, acceuilItemType });
 }
 
 module.exports = {
-  findLikeByUserAndAcceuil,
+  createLike,
+  getAllLikes,
+  getLikeById,
+  getLikesByItem,
+  checkUserLike,
   deleteLike,
-  createlike,
-  findDislikeByUserAndAcceuil,
-  deleteDislike,
-  createdislike,
-  getLikesForAcceuilItem,
-  getAlllikes,
-  getlikeById,
-  updatelikes,
-  delete: deleteById,
+  deleteLikeByUserAndItem,
+  getLikeCount
 };
