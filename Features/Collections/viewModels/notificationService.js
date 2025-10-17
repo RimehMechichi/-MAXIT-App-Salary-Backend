@@ -111,7 +111,7 @@ class NotificationService {
     try {
       return await Notification.find({ 
         userId: userId,
-        expiresAt: { $gt: new Date() } // Only non-expired
+        expiresAt: { $gt: new Date() } 
       }).sort({ createdAt: -1 }).limit(50);
     } catch (error) {
       console.error('Error getting user notifications:', error);
