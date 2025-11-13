@@ -1,5 +1,21 @@
 const Summary = require("../models/summaryModel");
 
+// Add new endpoint to get live caption stats
+exports.getCaptionStats = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const stats = captionService.getStats(meetingId);
+    
+    res.status(200).json({
+      meetingId,
+      ...stats,
+      hasCaptions: stats.captionCount > 0
+    });
+  } catch (err) {
+    console.error("❌ Error getting caption stats:", err.message);
+    res.status(500).json({ message: "Error getting caption stats", error: err.message });
+  }
+};
 // Get all summaries
 exports.getAllSummaries = async (req, res) => {
   try {

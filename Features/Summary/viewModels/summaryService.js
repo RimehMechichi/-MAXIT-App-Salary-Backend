@@ -17,8 +17,14 @@ async function getSummariesByMeeting(meetingId) {
   return summaries.length > 0 ? summaries[0] : null;
 }
 
+// Get summaries by meetingId
+async function getCaptionStats(meetingId) {
+  return await Summary.find( meetingId );
+}
+
 module.exports = {
   getAllSummaries,
   getSummaryById,
   getSummariesByMeeting,
+  getCaptionStats,
 };

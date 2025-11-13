@@ -9,12 +9,8 @@ const MODELS = {
     process.env.HF_TRANSCRIBE_MODEL || "openai/whisper-large-v3",
   ],
   SUMMARIZE: [
-    process.env.HF_SUMMARY_MODEL || "google/pegasus-large",
-    "google/pegasus-cnn_dailymail",
-    "facebook/bart-large-cnn",
+    process.env.HF_SUMMARY_MODEL || "facebook/bart-large-cnn",
     "philschmid/bart-large-cnn-samsum",
-    "google/pegasus-xsum",
-    "google/flan-t5-xl"  
   ],
 };
 
@@ -45,23 +41,30 @@ async function callHuggingFaceModel(model, input, headers = {}) {
   }
 }
 
-async function transcribeAudio(base64Audio) {
-  const audioBuffer = Buffer.from(base64Audio, "base64");
-  
+async function transcribeAudio(audioBuffer) {
   console.log(`🎧 Transcribing audio (${audioBuffer.length} bytes)...`);
 
   for (const model of MODELS.TRANSCRIBE) {
     console.log(`🔊 Trying ${model} for transcription...`);
     
-    const result = await callHuggingFaceModel(model, audioBuffer, {
-      "Content-Type": "audio/wav",
-      "Accept": "application/json",
-    });
-    
-    if (result?.text) {
-      const cleanedText = result.text.trim();
-      console.log(`✅ Transcribed with ${model}: "${cleanedText}"`);
-      return cleanedText;
+    try {
+      // Convert buffer to base64 for Hugging Face
+      const base64Audio = audioBuffer.toString('base64');
+      
+      const result = await callHuggingFaceModel(model, {
+        inputs: base64Audio
+      }, {
+        "Content-Type": "application/json",
+      });
+      
+      if (result?.text) {
+        const cleanedText = result.text.trim();
+        console.log(`✅ Transcribed with ${model}: "${cleanedText}"`);
+        return cleanedText;
+      }
+    } catch (err) {
+      console.warn(`⚠️ Transcription with ${model} failed:`, err.message);
+      continue;
     }
   }
 

@@ -9,3 +9,4 @@ const transcriptSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("Transcript", transcriptSchema);
+

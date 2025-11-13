@@ -18,7 +18,6 @@ exports.handleAudioTranscript = async (req, res) => {
       });
     }
 
-    // 1️⃣ Decode and transcribe
     console.log("🔍 Starting transcription...");
     const text = await transcribeAudio(base64Audio);
 
@@ -31,19 +30,15 @@ exports.handleAudioTranscript = async (req, res) => {
 
     console.log(`✅ Transcription complete (${text.length} chars)`);
 
-    // 🆕 Check if summary already exists for this meeting
     const existingSummary = await Summary.findOne({ meetingId }).sort({ createdAt: -1 });
     
     if (existingSummary) {
       console.log("🔄 Updating existing meeting summary with new transcription...");
       
-      // Append new transcription to existing transcript
       const updatedTranscript = existingSummary.fullTranscript + " " + text;
       
-      // Generate new summary with updated transcript
       const newSummary = await summarizeText(updatedTranscript);
       
-      // Update the existing summary
       existingSummary.fullTranscript = updatedTranscript;
       existingSummary.summary = newSummary;
       existingSummary.endTime = new Date();
@@ -58,13 +53,11 @@ exports.handleAudioTranscript = async (req, res) => {
       });
     }
 
-    // 🆕 Create new meeting summary (first transcription)
     console.log("🧠 Creating new meeting summary...");
     const summaryText = await summarizeText(text);
 
     const title = `Meeting ${meetingId} - ${new Date().toLocaleDateString()}`;
 
-    // Create the comprehensive summary
     const summary = await Summary.create({
       meetingId,
       summary: summaryText || "Summary generation in progress...",
