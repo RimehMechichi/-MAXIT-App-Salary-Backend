@@ -189,7 +189,7 @@ class UserController {
             if (req.body.role!==null && req.body.role==='admin'){
                 userRole = await Role.findOne({ name: 'admin' });
             }
-
+            
             const updatedUser = req.body;
             updatedUser.roles = [userRole._id]; // Use the ObjectId of the user role
             const utilisateur = await User.findByIdAndUpdate(id, updatedUser, { new: true });
@@ -245,6 +245,7 @@ class UserController {
         }
     }
 
+<<<<<<< HEAD
 
     // userController.js
 static async updateUserProfile(req, res) {
@@ -260,13 +261,33 @@ static async updateUserProfile(req, res) {
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
+=======
+    static async updateUserProfile(req, res) {
+        try {
+            const token = req.headers.authorization.split('Bearer ')[1];
+            const decodedToken = jwt.verify(token, config.secret);
+            const userId = decodedToken.id;
+            const user = await User.findById(userId);
+            console.log("find user : ",user)
+            const updatedUser = req.body;
+            if (!req.body) {
+               return res.status(500).json({ message: 'Veuillez saisir les informations nécessaires' });
+            }
+            console.log(userId)
+            if (user) {
+                updatedUser.password = bcrypt.hashSync(updatedUser.password, 8);
+                const utilisateur = await User.findByIdAndUpdate(userId, updatedUser, { new: true });
+               return res.json(utilisateur)
+            } else {
+                return res.status(404).json({ message: 'Utilisateur introuvable' });
+            }
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Une erreur est survenue lors de la récupération du profil de l\'utilisateur.' });
+        }
+>>>>>>> 0b30cc498cfcaa71703412191b0387e1e9b31496
     }
 
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-}
     static async getAllUsersWithRoleUser(req, res) {
         try {
             const token = req.headers.authorization.split('Bearer ')[1];
@@ -328,79 +349,32 @@ static async updateUserProfile(req, res) {
         }
     }
 
-   static async getOrganigramme(req, res) {
-    try {
-        const users = await User.find({}, 'firstName lastName jobTitle departement roles')
-        .populate('roles', 'name')
-        .exec();
+    static async getOrganigramme(req, res) {
+        try {
+            const users = await User.find({}, 'firstName lastName jobTitle departement roles') // ne retourne que les champs utiles
+            .populate('roles', 'name') // si tu veux inclure le rôle (admin/user)
+            .exec();
 
-        // Instead of grouping, just create a flat list of user objects.
-        const employeeList = users.map(user => ({
-            name: user.firstName + ' ' + user.lastName,
-            jobTitle: user.jobTitle,
-            role: user.roles.map(r => r.name),
-            departement: user.departement
-        }));
+            // Optionnel : grouper par département
+            const organigramme = {};
 
-        res.status(200).json(employeeList);
-    } catch (error) {
-        console.error("Organigramme fetch error:", error);
-        res.status(500).json({ message: 'Erreur serveur lors de la récupération de l\'organigramme' });
+            users.forEach(user => {
+            if (!organigramme[user.departement]) {
+                organigramme[user.departement] = [];
+            }
+            organigramme[user.departement].push({
+                name: user.firstName + ' ' + user.lastName,
+                jobTitle: user.jobTitle,
+                role: user.roles.map(r => r.name),
+            });
+            });
+
+            res.status(200).json(organigramme);
+        } catch (error) {
+            console.error("Organigramme fetch error:", error);
+            res.status(500).json({ message: 'Erreur serveur lors de la récupération de l\'organigramme' });
+        }
     }
-    }
-
-  static async uploadProfilePicture(req, res) {
-  try {
-    const { userId } = req.params;
-    console.log(`Updating profile picture for user: ${userId}`);
-
-    if (!req.file) {
-      console.log('No file uploaded');
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    // Verify the user exists using lean()
-    const user = await User.findById(userId).lean();
-    if (!user) {
-      console.log(`User not found: ${userId}`);
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    const picturePath = `/images/${req.file.filename}`;q
-    console.log(`New picture path: ${picturePath}`);
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { picture: picturePath },
-      { 
-        new: true,
-        runValidators: true // Ensure schema validation
-      }
-    ).select('-password'); // Exclude sensitive fields
-
-    if (!updatedUser) {
-      console.log('Update operation failed');
-      return res.status(500).json({ message: 'Failed to update profile picture' });
-    }
-
-    const fullImageUrl = `${req.protocol}://${req.get('host')}${picturePath}`;
-    console.log('Profile picture updated successfully');
-
-    return res.status(200).json({
-      success: true,
-      pictureUrl: fullImageUrl,
-      user: updatedUser
-    });
-
-  } catch (error) {
-    console.error('Error in uploadProfilePicture:', error);
-    return res.status(500).json({ 
-      success: false,
-      message: 'Server error during profile picture update',
-      error: error.message
-    });
-  }
-}
 }
 
 module.exports = UserController;

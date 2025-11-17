@@ -1,5 +1,6 @@
 const service = require('../viewModels/commentServices.js');
 
+<<<<<<< HEAD
 exports.create = async (req, res) => {
   try {
     const { titre_cmnt, description_cmnt, date_cmnt, nombres_cmnt} = req.body;
@@ -20,11 +21,47 @@ exports.create = async (req, res) => {
     });
 
     res.status(201).json(newEvent);
+=======
+exports.addCommentToAcceuilItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, text, acceuilItemType } = req.body; // ADD acceuilItemType
+
+    const imagePath = req.file ? `/images/${req.file.filename}` : null;
+
+    if (!userId || !text || !acceuilItemType) { // ADD validation
+      return res.status(400).json({ message: 'User ID, comment, and item type are required' });
+    }
+
+    const newComment = await service.addCommentToAcceuilItem({
+      acceuilItemId: id,
+      acceuilItemType: acceuilItemType, // ADD THIS
+      userId: userId,
+      text,
+      imageUrl: imagePath,
+      createdAt: new Date(),
+    });
+
+    res.status(201).json(newComment);
+>>>>>>> 0b30cc498cfcaa71703412191b0387e1e9b31496
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+<<<<<<< HEAD
+=======
+exports.getCommentsForAcceuilItem = async (req, res) => {
+  try {
+    const { id } = req.params; // acceuil item ID
+    const comments = await service.getCommentsByAcceuilItemId(id);
+    res.json(comments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+>>>>>>> 0b30cc498cfcaa71703412191b0387e1e9b31496
 exports.getAll = async (req, res) => {
   try {
     const comments = await service.getAllcomments();

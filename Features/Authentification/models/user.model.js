@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { USER_STATUS, ACCOUNT_STATUS } = require('../config/user.constants');
 
 const userSchema = new mongoose.Schema({
   lastName: {
@@ -57,6 +56,7 @@ const userSchema = new mongoose.Schema({
     required: true, 
     default: 25 
   },
+<<<<<<< HEAD
   firstName: { 
     type: String, 
     required: true,
@@ -122,6 +122,26 @@ const userSchema = new mongoose.Schema({
       ref: "Role"
     }
   ],
+=======
+  statusUser: {
+    type: String,
+    enum: ['active', 'inactive', 'Confirmé'],
+    default: 'active'
+  },
+  statusCompte: {
+    type: String,
+    enum: ['enabled', 'disabled', 'actif'],
+    default: 'enabled'
+  },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: String },
+  roles: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role"
+    }
+  ],
+>>>>>>> 0b30cc498cfcaa71703412191b0387e1e9b31496
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
