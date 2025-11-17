@@ -30,7 +30,7 @@ app.use(
 
 // 🖼️ Static assets
 app.use('/images', express.static(path.join(__dirname, 'Features/Authentification/Public/images')));
-app.use('/images', express.static(path.join(__dirname, 'Features/Ecologiques/Public/images')));
+app.use('/images', express.static(path.join(__dirname, 'Features/Ecologique/Public/images')));
 
 // 🧩 ROUTES IMPORTS
 const congeRoutes = require('./Features/Conge/routes/congeRoutes.js');
