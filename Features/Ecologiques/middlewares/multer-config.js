@@ -18,12 +18,17 @@ const storage = multer.diskStorage({
   },
 });
 
-// Middleware multer pour un seul fichier avec champ 'image'
-const uploadSingleImage = multer({
+// ✅ Middleware to upload:
+// - a single 'image_eventEco' (cover image)
+// - multiple 'images' (additional images)
+const uploadEventImages = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // max 10MB
-}).single('image_eventEco');
+  limits: { fileSize: 10 * 1024 * 1024 }, // max 10MB per file
+}).fields([
+  { name: 'image_eventEco', maxCount: 1 },
+  { name: 'images', maxCount: 10 },
+]);
 
 module.exports = {
-  uploadSingleImage,
+  uploadEventImages,
 };

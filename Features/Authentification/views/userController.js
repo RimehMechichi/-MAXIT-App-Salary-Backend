@@ -189,9 +189,9 @@ class UserController {
             if (req.body.role!==null && req.body.role==='admin'){
                 userRole = await Role.findOne({ name: 'admin' });
             }
-
+            
             const updatedUser = req.body;
-            updatedUser.roles = [userRole._id]; 
+            updatedUser.roles = [userRole._id]; // Use the ObjectId of the user role
             const utilisateur = await User.findByIdAndUpdate(id, updatedUser, { new: true });
 
             if (utilisateur) {
@@ -207,68 +207,57 @@ class UserController {
 
     static async getUserProfile(req, res) {
         try {
-            const authHeader = req.headers.authorization;
-            if (!authHeader) {
-            return res.status(401).json({ message: "Authorization header missing" });
-            }
-
-            const token = authHeader.split("Bearer ")[1];
-            if (!token) {
-            return res.status(401).json({ message: "Token missing" });
-            }
-
+            const token = req.headers.authorization.split('Bearer ')[1];
             const decodedToken = jwt.verify(token, config.secret);
             const userId = decodedToken.id;
-
-            const user = await User.findById(userId).lean();
-            if (!user) {
-            return res.status(404).json({ message: "Utilisateur introuvable" });
+            const user = await User.findById(userId);
+            if (user) {
+                const userProfile = {
+                    name: user.name,
+                    firstName: user.firstName,
+                    username: user.username,
+                    email: user.email,
+                    statusUser: user.statusUser,
+                    statusCompte: user.statusCompte,
+                    modePaiement: user.modePaiement,
+                    rib: user.rib
+                };
+                res.json(userProfile);
+            } else {
+                res.status(404).json({ message: 'Utilisateur introuvable' });
             }
-
-            const userProfile = {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            username: user.username,
-            email: user.email,
-            statusUser: user.statusUser,
-            statusCompte: user.statusCompte,
-            soldeRestant: user.soldeRestant ,
-            };
-
-            res.json(userProfile);
         } catch (error) {
-            console.error("getUserProfile error:", error);
-            res.status(500).json({ 
-            message: "Une erreur est survenue lors de la récupération du profil de l'utilisateur.",
-            error: error.message
-            });
+            console.error(error);
+            res.status(500).json({ message: 'Une erreur est survenue lors de la récupération du profil de l\'utilisateur.' });
         }
     }
 
-
-    // userController.js
     static async updateUserProfile(req, res) {
-    try {
-        const { id } = req.params;
-        const updateData = req.body;
-
-        const updatedUser = await User.findByIdAndUpdate(
-        id,
-        updateData,
-        { new: true }
-        );
-
-        if (!updatedUser) {
-        return res.status(404).json({ message: 'User not found' });
+        try {
+            const token = req.headers.authorization.split('Bearer ')[1];
+            const decodedToken = jwt.verify(token, config.secret);
+            const userId = decodedToken.id;
+            const user = await User.findById(userId);
+            console.log("find user : ",user)
+            const updatedUser = req.body;
+            if (!req.body) {
+               return res.status(500).json({ message: 'Veuillez saisir les informations nécessaires' });
+            }
+            console.log(userId)
+            if (user) {
+                updatedUser.password = bcrypt.hashSync(updatedUser.password, 8);
+                const utilisateur = await User.findByIdAndUpdate(userId, updatedUser, { new: true });
+               return res.json(utilisateur)
+            } else {
+                return res.status(404).json({ message: 'Utilisateur introuvable' });
+            }
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Une erreur est survenue lors de la récupération du profil de l\'utilisateur.' });
         }
-
-        res.status(200).json(updatedUser);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
     }
 
-    static async getAllUsers(req, res) {
+    static async getAllUsersWithRoleUser(req, res) {
         try {
             const token = req.headers.authorization.split('Bearer ')[1];
             const decodedToken = jwt.verify(token, config.secret);
@@ -278,15 +267,24 @@ class UserController {
             if (!user) {
                 return res.status(404).json({ error: 'Utilisateur introuvable' });
             }
-            // Fetch all users without filtering by role
-            const users = await User.find().populate('roles');
+
+            const hasUserRole = user.roles.some((role) => role.name === 'admin');
+            if (!hasUserRole) {
+                return res.status(401).json({ error: 'Access Denied' });
+            }
+
+            const role = await Role.findOne({ name: 'user' });
+            console.log("role",role.name)
+            if (!role) {
+                return res.status(404).json({ error: 'Le rôle "user" n\'existe pas.' });
+            }
+            const users = await User.find({ roles: role._id }).populate('roles');
             res.json(users);
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: 'Une erreur est survenue lors de la récupération des utilisateurs.' });
         }
     }
-
 
     static async getAllAdmins(req, res) {
         try {
@@ -320,56 +318,32 @@ class UserController {
         }
     }
 
-   static async getOrganigramme(req, res) {
-    try {
-        const users = await User.find({}, 'firstName lastName jobTitle departement roles')
-        .populate('roles', 'name')
-        .exec();
+    static async getOrganigramme(req, res) {
+        try {
+            const users = await User.find({}, 'firstName lastName jobTitle departement roles') // ne retourne que les champs utiles
+            .populate('roles', 'name') // si tu veux inclure le rôle (admin/user)
+            .exec();
 
-        // Instead of grouping, just create a flat list of user objects.
-        const employeeList = users.map(user => ({
-            name: user.firstName + ' ' + user.lastName,
-            jobTitle: user.jobTitle,
-            role: user.roles.map(r => r.name),
-            departement: user.departement
-        }));
+            // Optionnel : grouper par département
+            const organigramme = {};
 
-        res.status(200).json(employeeList);
-    } catch (error) {
-        console.error("Organigramme fetch error:", error);
-        res.status(500).json({ message: 'Erreur serveur lors de la récupération de l\'organigramme' });
+            users.forEach(user => {
+            if (!organigramme[user.departement]) {
+                organigramme[user.departement] = [];
+            }
+            organigramme[user.departement].push({
+                name: user.firstName + ' ' + user.lastName,
+                jobTitle: user.jobTitle,
+                role: user.roles.map(r => r.name),
+            });
+            });
+
+            res.status(200).json(organigramme);
+        } catch (error) {
+            console.error("Organigramme fetch error:", error);
+            res.status(500).json({ message: 'Erreur serveur lors de la récupération de l\'organigramme' });
+        }
     }
-    }
-
-  static async uploadProfilePicture(req, res) {
-  try {
-    const { userId } = req.params;
-
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    const picturePath = `/images/${req.file.filename}`;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { picture: picturePath },
-      { new: true }
-    ).select('-password');
-
-    const fullImageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
-
-    return res.status(200).json({
-      success: true,
-      pictureUrl: fullImageUrl,
-      user: updatedUser
-    });
-
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}
-
 }
 
 module.exports = UserController;

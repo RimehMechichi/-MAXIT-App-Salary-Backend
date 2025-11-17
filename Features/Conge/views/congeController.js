@@ -17,14 +17,8 @@ exports.create = async (req, res) => {
         }
 
         const conge = new Conge({
-            dateDebut: req.body.dateDebut,
-            dateFin: req.body.dateFin,
-            type: req.body.type,
-            commentaire: req.body.commentaire,
-            certificat: req.body.certificat,
-            motif: req.body.motif,
-            statut: 'En attente',
-            userId: req.body.userId 
+            ...req.body,
+            statut: 'En attente', 
         });
 
         await conge.save();
