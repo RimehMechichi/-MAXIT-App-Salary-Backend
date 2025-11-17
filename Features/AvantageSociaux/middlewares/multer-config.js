@@ -1,5 +1,5 @@
 const multer = require('multer');
-const { join } = require('path');
+const path = require('path');
 const fs = require('fs');
 
 // Extensions autorisées
@@ -9,13 +9,15 @@ const MIME_TYPES = {
   'image/png': 'png',
 };
 
-// Crée le dossier si inexistant
-const uploadDir = join(__dirname, '../Public/images');
+// 📌 Always save to SAME ABSOLUTE FOLDER used by server.js
+const uploadDir = path.join(process.cwd(), "Features/AvantageSociaux/Public/images");
+
+// Create directory if missing
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configuration du stockage
+// Storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -27,30 +29,25 @@ const storage = multer.diskStorage({
   },
 });
 
-// Middleware Multer
-// Accepte une image unique ou plusieurs images
+// Middleware
 const uploadImages = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // max 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 },
 }).fields([
-  { name: 'image_AS', maxCount: 1 },   // image unique
-  { name: 'images_AS', maxCount: 5 },  // images multiples
+  { name: 'image_AS', maxCount: 1 },
+  { name: 'images_AS', maxCount: 5 },
 ]);
 
-// Middleware pour gérer les erreurs Multer
+// Wrapper for multer errors
 const handleUploadErrors = (req, res, next) => {
   uploadImages(req, res, function (err) {
     if (err instanceof multer.MulterError) {
-      // Erreur spécifique Multer
       return res.status(400).json({ error: err.message });
     } else if (err) {
-      // Autres erreurs
       return res.status(500).json({ error: err.message });
     }
     next();
   });
 };
 
-module.exports = {
-  uploadImages: handleUploadErrors,
-};
+module.exports = { uploadImages: handleUploadErrors };
